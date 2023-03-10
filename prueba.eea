@@ -1,0 +1,28 @@
+mkdisk >size=200 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco0.dsk" >fit=BF >unit=k
+mkdisk >size=1024 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >fit=FF >unit=m
+rmdisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco0.dsk
+FDISK >size=300 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion1
+FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion2 >fit=bF
+FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion3 >type=E >unit=M
+FDISK >size=50 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion4 >unit=M
+FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL1 >fit=bF >type=L
+FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >fit=bF >type=L
+FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL3 >fit=bF >type=L
+seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
+FDISK >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion2 >delete=full
+FDISK >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >delete=full
+FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >fit=WF >type=L
+seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
+FDISK >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion3 >delete=full
+seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
+FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion3 >type=E >unit=M
+FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL1 >fit=bF >type=L
+FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >fit=bF >type=L
+seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
+mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=Particion1
+mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=ParticionL2
+mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=Particion3
+mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=ParticionL1
+seemounts
+unmount >id=002Disco1
+seemounts
