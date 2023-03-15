@@ -5,27 +5,42 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <math.h>
 
 using namespace std;
 
-struct BloqueApuntadores{
+struct Journaling
+{
+    bool Journal_status;
+    char Journal_command[150];
+    time_t Journal_date;
+    int Journal_Owner;
+    int Journal_Permission;
+};
+
+struct BloqueApuntadores
+{
     int b_pointers[16];
 };
 
-struct BloqueArchivos{
+struct BloqueArchivos
+{
     char b_content[64];
 };
 
-struct content{
+struct content
+{
     char b_name[12];
     int b_inodo;
 };
 
-struct BloqueCarpeta{
+struct BloqueCarpeta
+{
     content b_content[4];
 };
 
-struct TablaInodo{
+struct TablaInodo
+{
     int i_uid;
     int i_gid;
     int i_size;
@@ -37,7 +52,8 @@ struct TablaInodo{
     int i_perm;
 };
 
-struct SuperBloque{
+struct SuperBloque
+{
     int s_filesystem_type;
     int s_inodes_count;
     int s_blocks_count;
@@ -49,7 +65,7 @@ struct SuperBloque{
     int s_magic;
     int s_inode_s;
     int s_block_s;
-    int s_firts_ino;
+    int s_first_ino;
     int s_first_blo;
     int s_bm_inode_start;
     int s_bm_block_start;
@@ -65,6 +81,15 @@ struct MountPart
     char part_name[16];
     int part_size;
     int part_start;
+};
+
+struct Session
+{
+    string User;
+    int IDU;
+    string Grupo;
+    int IDG;
+    MountPart Active;
 };
 
 struct EBR
@@ -99,6 +124,7 @@ struct MBR
     partition mbr_partition_4;
 };
 
+void Inicializaciones();
 string strLower(string);
 bool LeerComando(string);
 void LeerScript(string);
@@ -107,23 +133,28 @@ void EliminarDisco(string);
 void CrearParticion(int, string, string, string, string, string);
 void EliminarParticion(string, string);
 void MountParticion(string, string);
-void UnmountParticion(string);
 MountPart BuscarParticion(string, string);
+void UnmountParticion(string);
+void FormatearParticion(string, string, string);
+void Login(string, string, string);
+
+string LeerArchivo(int);
+string LeerPorApuntadores(int, int, int);
 string Valor(string &);
 void CrearPath(string);
 string getName(string);
 void VerDisco(string);
 void VerMounts();
+void VerInfo(string);
 
 MountPart ActivePart[10];
+Session Sesion;
+char BM0 = '0';
+char BM1 = '1';
 
 int main()
 {
-    for (int i = 0; i < 10; i++)
-    {
-        ActivePart[i].Active = false;
-    }
-    srand(time(NULL));
+    Inicializaciones();
     cout << "Daniel Alejandro Barillas Soberanis" << endl;
     cout << "201807100" << endl;
     cout << "--------------Proyecto#1--------------" << endl;
@@ -132,6 +163,20 @@ int main()
     {
         getline(cin, Linea);
     } while (LeerComando(Linea + " "));
+}
+
+void Inicializaciones()
+{
+    for (int i = 0; i < 10; i++)
+    {
+        ActivePart[i].Active = false;
+    }
+    Sesion.User = "";
+    Sesion.Grupo = "";
+    Sesion.IDU = -1;
+    Sesion.IDG = -1;
+    Sesion.Active.Active = false;
+    srand(time(NULL));
 }
 
 string strLower(string Text)
@@ -145,322 +190,463 @@ bool LeerComando(string Linea)
 {
     bool Error = false;
     string Aux = Valor(Linea);
-    if (strLower(Aux) == "execute")
+    if (Aux[0] != '#')
     {
-        string Path = "";
-        bool BPath = false;
-        while (Linea != "" && !Error)
+        if (strLower(Aux) == "execute")
         {
-            Aux = Valor(Linea);
-            if (strLower(Aux) == ">path")
+            string Path = "";
+            bool BPath = false;
+            while (Linea != "" && !Error)
             {
-                Path = Valor(Linea);
-                BPath = true;
-            }
-            else
-            {
-                Error = true;
-                cout << "Error, Parametro desconocido" << endl;
-            }
-        }
-        if (BPath && !Error)
-        {
-            LeerScript(Path);
-        }
-        else if (!Error)
-        {
-            cout << "Error, Faltan parametros" << endl;
-        }
-    }
-    else if (strLower(Aux) == "mkdisk")
-    {
-        int Size;
-        string Path, Fit = "FF", Unit = "M";
-        bool BSize = false, BPath = false;
-        while (Linea != "" && !Error)
-        {
-            Aux = Valor(Linea);
-            if (strLower(Aux) == ">size")
-            {
-                Size = stoi(Valor(Linea));
-                if (Size <= 0)
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">path")
                 {
-                    Error = true;
-                    cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
-                }
-                BSize = true;
-            }
-            else if (strLower(Aux) == ">path")
-            {
-                Path = Valor(Linea);
-                BPath = true;
-            }
-            else if (strLower(Aux) == ">fit")
-            {
-                Fit = Valor(Linea);
-                if (!(strLower(Fit) == "bf" || strLower(Fit) == "ff" || strLower(Fit) == "wf"))
-                {
-                    Error = true;
-                    cout << "Error, Valor invalido o no soportado" << endl;
-                }
-            }
-            else if (strLower(Aux) == ">unit")
-            {
-                Unit = Valor(Linea);
-                if (!(strLower(Unit) == "k" || strLower(Unit) == "m"))
-                {
-                    Error = true;
-                    cout << "Error, Valor invalido o no soportado" << endl;
-                }
-            }
-            else
-            {
-                Error = true;
-                cout << "Error, Parametro desconocido" << endl;
-            }
-        }
-        if (BSize && BPath && !Error)
-        {
-            CrearDisco(Size, Path, Fit, Unit);
-        }
-        else if (!Error)
-        {
-            cout << "Error, Faltan parametros" << endl;
-        }
-    }
-    else if (strLower(Aux) == "rmdisk")
-    {
-        string Path = "";
-        bool BPath = false;
-        while (Linea != "" && !Error)
-        {
-            Aux = Valor(Linea);
-            if (strLower(Aux) == ">path")
-            {
-                Path = Valor(Linea);
-                BPath = true;
-            }
-            else
-            {
-                Error = true;
-                cout << "Error, Parametro desconocido" << endl;
-            }
-        }
-        if (BPath && !Error)
-        {
-            EliminarDisco(Path);
-        }
-        else if (!Error)
-        {
-            cout << "Error, Faltan parametros" << endl;
-        }
-    }
-    else if (strLower(Aux) == "fdisk")
-    {
-        int Size, Add = 0;
-        string Path, Name, Unit = "k", Type = "p", Fit = "wf", Delete = "";
-        bool BSize = false, BPath = false, BName = false, BDelete = false;
-        while (Linea != "" && !Error)
-        {
-            Aux = Valor(Linea);
-            if (strLower(Aux) == ">size")
-            {
-                Size = stoi(Valor(Linea));
-                if (Size <= 0)
-                {
-                    Error = true;
-                    cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
-                }
-                BSize = true;
-            }
-            else if (strLower(Aux) == ">path")
-            {
-                Path = Valor(Linea);
-                BPath = true;
-            }
-            else if (strLower(Aux) == ">name")
-            {
-                Name = Valor(Linea);
-                if (Name.length() > 16)
-                {
-                    Error = true;
-                    cout << "Error, El nombre debe ser menor a 16 caracteres";
-                }
-                BName = true;
-            }
-            else if (strLower(Aux) == ">unit")
-            {
-                Unit = Valor(Linea);
-                if (!(strLower(Unit) == "b" || strLower(Unit) == "k" || strLower(Unit) == "m"))
-                {
-                    Error = true;
-                    cout << "Error, Valor invalido o no soportado" << endl;
-                }
-            }
-            else if (strLower(Aux) == ">type")
-            {
-                Type = Valor(Linea);
-                if (!(strLower(Type) == "p" || strLower(Type) == "e" || strLower(Type) == "l"))
-                {
-                    Error = true;
-                    cout << "Error, Valor invalido o no soportado" << endl;
-                }
-            }
-            else if (strLower(Aux) == ">fit")
-            {
-                Fit = Valor(Linea);
-                if (!(strLower(Fit) == "bf" || strLower(Fit) == "ff" || strLower(Fit) == "wf"))
-                {
-                    Error = true;
-                    cout << "Error, Valor invalido o no soportado" << endl;
-                }
-            }
-            else if (strLower(Aux) == ">delete")
-            {
-                Delete = Valor(Linea);
-                if (strLower(Delete) != "full")
-                {
-                    Error = true;
-                    cout << "Error, Opcion invalida o no soportada" << endl;
+                    Path = Valor(Linea);
+                    BPath = true;
                 }
                 else
                 {
-                    BDelete = true;
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
                 }
             }
-            else if (strLower(Aux) == ">add")
+            if (BPath && !Error)
             {
-                Add = stoi(Valor(Linea));
-                if (Add <= 0)
+                LeerScript(Path);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
+        }
+        else if (strLower(Aux) == "mkdisk")
+        {
+            int Size;
+            string Path, Fit = "FF", Unit = "M";
+            bool BSize = false, BPath = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">size")
+                {
+                    Size = stoi(Valor(Linea));
+                    if (Size <= 0)
+                    {
+                        Error = true;
+                        cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
+                    }
+                    BSize = true;
+                }
+                else if (strLower(Aux) == ">path")
+                {
+                    Path = Valor(Linea);
+                    BPath = true;
+                }
+                else if (strLower(Aux) == ">fit")
+                {
+                    Fit = Valor(Linea);
+                    if (!(strLower(Fit) == "bf" || strLower(Fit) == "ff" || strLower(Fit) == "wf"))
+                    {
+                        Error = true;
+                        cout << "Error, Valor invalido o no soportado" << endl;
+                    }
+                }
+                else if (strLower(Aux) == ">unit")
+                {
+                    Unit = Valor(Linea);
+                    if (!(strLower(Unit) == "k" || strLower(Unit) == "m"))
+                    {
+                        Error = true;
+                        cout << "Error, Valor invalido o no soportado" << endl;
+                    }
+                }
+                else
                 {
                     Error = true;
-                    cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
+                    cout << "Error, Parametro desconocido" << endl;
                 }
             }
-            else
+            if (BSize && BPath && !Error)
             {
-                Error = true;
-                cout << "Error, Parametro desconocido" << endl;
+                CrearDisco(Size, Path, Fit, Unit);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
             }
         }
-        if (BSize && BPath && BName && !Error)
+        else if (strLower(Aux) == "rmdisk")
         {
-            CrearParticion(Size, Path, Name, Unit, Type, Fit);
-        }
-        else if (BDelete && BPath && BName && !Error)
-        {
-            EliminarParticion(Path, Name);
-        }
-        else if (!Error)
-        {
-            cout << "Error, Faltan parametros" << endl;
-        }
-    }
-    else if (strLower(Aux) == "mount")
-    {
-        string Path, Name;
-        bool BPath = false, BName = false;
-        while (Linea != "" && !Error)
-        {
-            Aux = Valor(Linea);
-            if (strLower(Aux) == ">path")
+            string Path = "";
+            bool BPath = false;
+            while (Linea != "" && !Error)
             {
-                Path = Valor(Linea);
-                BPath = true;
-            }
-            else if (strLower(Aux) == ">name")
-            {
-                Name = Valor(Linea);
-                if (Name.length() > 16)
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">path")
+                {
+                    Path = Valor(Linea);
+                    BPath = true;
+                }
+                else
                 {
                     Error = true;
-                    cout << "Error, El nombre debe ser menor a 16 caracteres";
+                    cout << "Error, Parametro desconocido" << endl;
                 }
-                BName = true;
+            }
+            if (BPath && !Error)
+            {
+                EliminarDisco(Path);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
+        }
+        else if (strLower(Aux) == "fdisk")
+        {
+            int Size, Add = 0;
+            string Path, Name, Unit = "k", Type = "p", Fit = "wf", Delete = "";
+            bool BSize = false, BPath = false, BName = false, BDelete = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">size")
+                {
+                    Size = stoi(Valor(Linea));
+                    if (Size <= 0)
+                    {
+                        Error = true;
+                        cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
+                    }
+                    BSize = true;
+                }
+                else if (strLower(Aux) == ">path")
+                {
+                    Path = Valor(Linea);
+                    BPath = true;
+                }
+                else if (strLower(Aux) == ">name")
+                {
+                    Name = Valor(Linea);
+                    if (Name.length() > 16)
+                    {
+                        Error = true;
+                        cout << "Error, El nombre debe ser menor a 16 caracteres";
+                    }
+                    BName = true;
+                }
+                else if (strLower(Aux) == ">unit")
+                {
+                    Unit = Valor(Linea);
+                    if (!(strLower(Unit) == "b" || strLower(Unit) == "k" || strLower(Unit) == "m"))
+                    {
+                        Error = true;
+                        cout << "Error, Valor invalido o no soportado" << endl;
+                    }
+                }
+                else if (strLower(Aux) == ">type")
+                {
+                    Type = Valor(Linea);
+                    if (!(strLower(Type) == "p" || strLower(Type) == "e" || strLower(Type) == "l"))
+                    {
+                        Error = true;
+                        cout << "Error, Valor invalido o no soportado" << endl;
+                    }
+                }
+                else if (strLower(Aux) == ">fit")
+                {
+                    Fit = Valor(Linea);
+                    if (!(strLower(Fit) == "bf" || strLower(Fit) == "ff" || strLower(Fit) == "wf"))
+                    {
+                        Error = true;
+                        cout << "Error, Valor invalido o no soportado" << endl;
+                    }
+                }
+                else if (strLower(Aux) == ">delete")
+                {
+                    Delete = Valor(Linea);
+                    if (strLower(Delete) != "full")
+                    {
+                        Error = true;
+                        cout << "Error, Opcion invalida o no soportada" << endl;
+                    }
+                    else
+                    {
+                        BDelete = true;
+                    }
+                }
+                else if (strLower(Aux) == ">add")
+                {
+                    Add = stoi(Valor(Linea));
+                    if (Add <= 0)
+                    {
+                        Error = true;
+                        cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
+                    }
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BSize && BPath && BName && !Error)
+            {
+                CrearParticion(Size, Path, Name, Unit, Type, Fit);
+            }
+            else if (BDelete && BPath && BName && !Error)
+            {
+                EliminarParticion(Path, Name);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
+        }
+        else if (strLower(Aux) == "mount")
+        {
+            string Path, Name;
+            bool BPath = false, BName = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">path")
+                {
+                    Path = Valor(Linea);
+                    BPath = true;
+                }
+                else if (strLower(Aux) == ">name")
+                {
+                    Name = Valor(Linea);
+                    if (Name.length() > 16)
+                    {
+                        Error = true;
+                        cout << "Error, El nombre debe ser menor a 16 caracteres";
+                    }
+                    BName = true;
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BPath && BName && !Error)
+            {
+                MountParticion(Path, Name);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
+        }
+        else if (strLower(Aux) == "unmount")
+        {
+            string ID;
+            bool BID = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">id")
+                {
+                    ID = Valor(Linea);
+                    BID = true;
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BID && !Error)
+            {
+                UnmountParticion(ID);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
+        }
+        else if (strLower(Aux) == "mkfs")
+        {
+            string ID, Type = "Full", FS = "2fs";
+            bool BID = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">id")
+                {
+                    ID = Valor(Linea);
+                    BID = true;
+                }
+                else if (strLower(Aux) == ">name")
+                {
+                    Type = Valor(Linea);
+                    if (strLower(Type) != "full")
+                    {
+                        Error = true;
+                        cout << "Error, Opcion invalida o no soportada" << endl;
+                    }
+                }
+                else if (strLower(Aux) == ">fs")
+                {
+                    FS = Valor(Linea);
+                    if (strLower(FS) != "2fs" && strLower(FS) != "3fs")
+                    {
+                        Error = true;
+                        cout << "Error, Opcion invalida o no soportada" << endl;
+                    }
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BID && !Error)
+            {
+                FormatearParticion(ID, Type, FS);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
+        }
+        else if (strLower(Aux) == "login")
+        {
+            if (Sesion.User == "")
+            {
+                string User, Pass, ID;
+                bool BUser = false, BPass = false, BID = false;
+                while (Linea != "" && !Error)
+                {
+                    Aux = Valor(Linea);
+                    if (strLower(Aux) == ">user")
+                    {
+                        User = Valor(Linea);
+                        BUser = true;
+                    }
+                    else if (strLower(Aux) == ">pass")
+                    {
+                        Pass = Valor(Linea);
+                        BPass = true;
+                    }
+                    else if (strLower(Aux) == ">id")
+                    {
+                        ID = Valor(Linea);
+                        BID = true;
+                    }
+                    else
+                    {
+                        Error = true;
+                        cout << "Error, Parametro desconocido" << endl;
+                    }
+                }
+                if (BUser && BPass && BID && !Error)
+                {
+                    Login(User, Pass, ID);
+                }
+                else if (!Error)
+                {
+                    cout << "Error, Faltan parametros" << endl;
+                }
             }
             else
             {
-                Error = true;
-                cout << "Error, Parametro desconocido" << endl;
+                cout << "Error, ya esta logeado" << endl;
             }
         }
-        if (BPath && BName && !Error)
+        else if (strLower(Aux) == "logout")
         {
-            MountParticion(Path, Name);
-        }
-        else if (!Error)
-        {
-            cout << "Error, Faltan parametros" << endl;
-        }
-    }
-    else if (strLower(Aux) == "unmount")
-    {
-        string ID;
-        bool BID = false;
-        while (Linea != "" && !Error)
-        {
-            Aux = Valor(Linea);
-            if (strLower(Aux) == ">id")
+            if (Sesion.User != "")
             {
-                ID = Valor(Linea);
-                BID = true;
+                Sesion.User = "";
+                Sesion.Grupo = "";
+                Sesion.IDU = -1;
+                Sesion.IDG = -1;
+                Sesion.Active.Active = false;
+                cout << "Sesion cerrada exitosamente" << endl;
             }
             else
             {
-                Error = true;
-                cout << "Error, Parametro desconocido" << endl;
+                cout << "Error, usted no esta logeado" << endl;
             }
         }
-        if (BID && !Error)
+        else if (strLower(Aux) == "seedisk")
         {
-            UnmountParticion(ID);
-        }
-        else if (!Error)
-        {
-            cout << "Error, Faltan parametros" << endl;
-        }
-    }
-    else if (strLower(Aux) == "seedisk")
-    {
-        string Path = "";
-        bool BPath = false;
-        while (Linea != "" && !Error)
-        {
-            Aux = Valor(Linea);
-            if (strLower(Aux) == ">path")
+            string Path = "";
+            bool BPath = false;
+            while (Linea != "" && !Error)
             {
-                Path = Valor(Linea);
-                BPath = true;
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">path")
+                {
+                    Path = Valor(Linea);
+                    BPath = true;
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
             }
-            else
+            if (BPath && !Error)
             {
-                Error = true;
-                cout << "Error, Parametro desconocido" << endl;
+                VerDisco(Path);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
             }
         }
-        if (BPath && !Error)
+        else if (strLower(Aux) == "seemounts")
         {
-            VerDisco(Path);
+            VerMounts();
         }
-        else if (!Error)
+        else if (strLower(Aux) == "seeinfo")
         {
-            cout << "Error, Faltan parametros" << endl;
+            string ID = "";
+            bool BID = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">id")
+                {
+                    ID = Valor(Linea);
+                    BID = true;
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BID && !Error)
+            {
+                VerInfo(ID);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
         }
-    }
-    else if (strLower(Aux) == "seemounts")
-    {
-        VerMounts();
-    }
-    else if (strLower(Aux) == "rep")
-    {
-    }
-    else if (strLower(Aux) == "exit")
-    {
-        return false;
-    }
-    else
-    {
-        cout << "Error, Comando desconocido" << endl;
+        else if (strLower(Aux) == "pause")
+        {
+            string Aux;
+            cout << "Ejecucion en pausa, oprima enter para continuar ";
+            getline(cin, Aux);
+        }
+        else if (strLower(Aux) == "rep")
+        {
+        }
+        else if (strLower(Aux) == "exit")
+        {
+            return false;
+        }
+        else if (strLower(Aux) != "")
+        {
+            cout << "Error, Comando desconocido" << endl;
+        }
     }
     return true;
 }
@@ -1436,48 +1622,8 @@ void MountParticion(string Path, string Name)
     }
 }
 
-void UnmountParticion(string ID)
-{
-    bool Unmount = false;
-    for (int i = 0; i < 10; i++)
-    {
-        if (!Unmount)
-        {
-            if (ActivePart[i].Active)
-            {
-                if (ID == ActivePart[i].ID)
-                {
-                    Unmount = true;
-                    if (i == 9)
-                    {
-                        ActivePart[i].Active = false;
-                    }
-                    else
-                    {
-                        ActivePart[i] = ActivePart[i + 1];
-                    }
-                }
-            }
-        }
-        else
-        {
-            if (i == 9)
-            {
-                ActivePart[i].Active = false;
-            }
-            else
-            {
-                ActivePart[i] = ActivePart[i + 1];
-            }
-        }
-    }
-    if (!Unmount)
-    {
-        cout << "Error, no se encontro la particion" << endl;
-    }
-}
-
 MountPart BuscarParticion(string Path, string Name)
+
 {
     MountPart NewMount;
     NewMount.Active = false;
@@ -1578,8 +1724,8 @@ MountPart BuscarParticion(string Path, string Name)
             {
                 NewMount.Active = true;
                 strcpy(NewMount.part_name, EBRAux.part_name);
-                NewMount.part_size = EBRAux.part_size;
-                NewMount.part_start = EBRAux.part_start;
+                NewMount.part_size = EBRAux.part_size - sizeof(EBRAux);
+                NewMount.part_start = EBRAux.part_start + sizeof(EBRAux);
                 NewMount.ID = to_string(cont);
                 return NewMount;
             }
@@ -1594,8 +1740,8 @@ MountPart BuscarParticion(string Path, string Name)
                 {
                     NewMount.Active = true;
                     strcpy(NewMount.part_name, EBRNext.part_name);
-                    NewMount.part_size = EBRNext.part_size;
-                    NewMount.part_start = EBRNext.part_start;
+                    NewMount.part_size = EBRNext.part_size - sizeof(EBRAux);
+                    NewMount.part_start = EBRNext.part_start + sizeof(EBRAux);
                     NewMount.ID = to_string(cont);
                     return NewMount;
                 }
@@ -1605,6 +1751,380 @@ MountPart BuscarParticion(string Path, string Name)
     }
     file.close();
     return NewMount;
+}
+
+void UnmountParticion(string ID)
+{
+    bool Unmount = false;
+    for (int i = 0; i < 10; i++)
+    {
+        if (!Unmount)
+        {
+            if (ActivePart[i].Active)
+            {
+                if (ID == ActivePart[i].ID)
+                {
+                    Unmount = true;
+                    if (i == 9)
+                    {
+                        ActivePart[i].Active = false;
+                    }
+                    else
+                    {
+                        ActivePart[i] = ActivePart[i + 1];
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (i == 9)
+            {
+                ActivePart[i].Active = false;
+            }
+            else
+            {
+                ActivePart[i] = ActivePart[i + 1];
+            }
+        }
+    }
+    if (!Unmount)
+    {
+        cout << "Error, no se encontro la particion" << endl;
+    }
+}
+
+void FormatearParticion(string ID, string Type, string FS)
+{
+    int ActiveParticion = -1;
+    for (int i = 0; i < 10; i++)
+    {
+        if (ID == ActivePart[i].ID)
+        {
+            ActiveParticion = i;
+            break;
+        }
+    }
+    if (ActiveParticion != -1)
+    {
+        MountPart Activa = ActivePart[ActiveParticion];
+        fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+        if (file.is_open())
+        {
+            SuperBloque NewSB;
+            int N;
+            int Espacio_Journaling = 0;
+            if (strLower(FS) == "2fs")
+            {
+                N = floor((Activa.part_size - sizeof(SuperBloque)) / (4 + sizeof(TablaInodo) + 3 * sizeof(BloqueCarpeta)));
+                NewSB.s_filesystem_type = 2;
+            }
+            else
+            {
+                N = floor((Activa.part_size - sizeof(SuperBloque)) / (4 + sizeof(Journaling) + sizeof(TablaInodo) + 3 * sizeof(BloqueCarpeta)));
+                NewSB.s_filesystem_type = 3;
+                Espacio_Journaling = sizeof(Journaling);
+            }
+            NewSB.s_inodes_count = N;
+            NewSB.s_blocks_count = 3 * N;
+            NewSB.s_free_blocks_count = 3 * N;
+            NewSB.s_free_inodes_count = N;
+            time(&NewSB.s_mtime);
+            time(&NewSB.s_umtime);
+            NewSB.s_mnt_count = 0;
+            NewSB.s_magic = 0xEF53;
+            NewSB.s_inode_s = sizeof(TablaInodo);
+            NewSB.s_block_s = sizeof(BloqueCarpeta);
+            NewSB.s_first_ino = Activa.part_start + sizeof(SuperBloque) + Espacio_Journaling + 4 * N;
+            NewSB.s_first_blo = Activa.part_start + sizeof(SuperBloque) + Espacio_Journaling + 4 * N + N * sizeof(TablaInodo);
+            NewSB.s_bm_inode_start = Activa.part_start + sizeof(SuperBloque) + Espacio_Journaling;
+            NewSB.s_bm_block_start = Activa.part_start + sizeof(SuperBloque) + Espacio_Journaling + N;
+            NewSB.s_inode_start = Activa.part_start + sizeof(SuperBloque) + Espacio_Journaling + 4 * N;
+            NewSB.s_block_start = Activa.part_start + sizeof(SuperBloque) + Espacio_Journaling + 4 * N + N * sizeof(TablaInodo);
+
+            // Inodo Raiz
+
+            TablaInodo Raiz;
+            Raiz.i_uid = 1;
+            Raiz.i_gid = 1;
+            Raiz.i_size = 0;
+            time(&Raiz.i_atime);
+            time(&Raiz.i_ctime);
+            time(&Raiz.i_mtime);
+            Raiz.i_type = 0;
+            Raiz.i_perm = 777777777;
+            Raiz.i_block[0] = 1;
+            for (int i = 1; i < 15; i++)
+            {
+                Raiz.i_block[i] = -1;
+            }
+            file.seekg(NewSB.s_bm_inode_start);
+            file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+            file.seekg(NewSB.s_inode_start);
+            file.write(reinterpret_cast<char *>(&Raiz), sizeof(Raiz));
+            NewSB.s_first_ino = NewSB.s_first_ino + sizeof(TablaInodo);
+            NewSB.s_free_inodes_count--;
+
+            // Bloque Carpeta Raiz
+
+            BloqueCarpeta CarpetaRaiz;
+            string Aux = "..";
+            strcpy(CarpetaRaiz.b_content[0].b_name, Aux.c_str());
+            CarpetaRaiz.b_content[0].b_inodo = 0;
+            Aux = ".";
+            strcpy(CarpetaRaiz.b_content[1].b_name, Aux.c_str());
+            CarpetaRaiz.b_content[1].b_inodo = 0;
+            Aux = "users.txt";
+            strcpy(CarpetaRaiz.b_content[2].b_name, Aux.c_str());
+            CarpetaRaiz.b_content[2].b_inodo = 1;
+            Aux = "";
+            strcpy(CarpetaRaiz.b_content[3].b_name, Aux.c_str());
+            CarpetaRaiz.b_content[3].b_inodo = -1;
+            file.seekg(NewSB.s_bm_block_start);
+            file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+            file.seekg(NewSB.s_block_start);
+            file.write(reinterpret_cast<char *>(&CarpetaRaiz), sizeof(CarpetaRaiz));
+            NewSB.s_first_blo = NewSB.s_first_blo + sizeof(BloqueCarpeta);
+            NewSB.s_free_blocks_count--;
+
+            // Inodo Users.txt
+
+            TablaInodo Users;
+            Users.i_uid = 1;
+            Users.i_gid = 1;
+            string Usuarios = "1, G, root      \n1, U, root      , root      , 123       \n";
+            Users.i_size = Usuarios.length();
+            time(&Users.i_atime);
+            time(&Users.i_ctime);
+            time(&Users.i_mtime);
+            Users.i_type = 1;
+            Users.i_perm = 777777777;
+            Users.i_block[0] = 2;
+            for (int i = 1; i < 15; i++)
+            {
+                Users.i_block[i] = -1;
+            }
+            file.seekg(NewSB.s_bm_inode_start + 1);
+            file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+            file.seekg(NewSB.s_first_ino);
+            file.write(reinterpret_cast<char *>(&Users), sizeof(Users));
+            NewSB.s_first_ino = NewSB.s_first_ino + sizeof(TablaInodo);
+            NewSB.s_free_inodes_count--;
+
+            // Bloque Archivo Users.txt
+
+            BloqueArchivos Users_txt;
+            strcpy(Users_txt.b_content, Usuarios.c_str());
+            file.seekg(NewSB.s_bm_block_start + 1);
+            file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+            file.seekg(NewSB.s_first_blo);
+            file.write(reinterpret_cast<char *>(&Users_txt), sizeof(Users_txt));
+            NewSB.s_first_blo = NewSB.s_first_blo + sizeof(BloqueCarpeta);
+            NewSB.s_free_blocks_count--;
+
+            file.seekg(Activa.part_start);
+            file.write(reinterpret_cast<char *>(&NewSB), sizeof(NewSB));
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+        file.close();
+    }
+    else
+    {
+        cout << "Error, ID no encontrada" << endl;
+    }
+}
+
+void Login(string User, string Pass, string ID)
+{
+    int ActiveParticion = -1;
+    for (int i = 0; i < 10; i++)
+    {
+        if (ID == ActivePart[i].ID)
+        {
+            ActiveParticion = i;
+            break;
+        }
+    }
+    while (User.length() < 10)
+    {
+        User += " ";
+    }
+    while (Pass.length() < 10)
+    {
+        Pass += " ";
+    }
+    if (ActiveParticion != -1)
+    {
+        MountPart Activa = ActivePart[ActiveParticion];
+        fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+        if (file.is_open())
+        {
+            SuperBloque SB;
+            file.seekg(Activa.part_start);
+            file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+            MountPart Temp = Sesion.Active;
+            Sesion.Active = Activa;
+            string Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+            Sesion.IDU = -1;
+            bool Contra = false;
+            while (Usuarios_txt.find("\n") != string::npos)
+            {
+                string Linea = Usuarios_txt.substr(0, Usuarios_txt.find("\n"));
+                Usuarios_txt = Usuarios_txt.substr(Usuarios_txt.find("\n") + 1, Usuarios_txt.length());
+                int IDTemp = stoi(Linea.substr(0, Linea.find(",")));
+                if (IDTemp != 0)
+                {
+                    Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                    string Type = Linea.substr(0, Linea.find(","));
+                    Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                    if (Type == "U")
+                    {
+                        string Grupo = Linea.substr(0, Linea.find(","));
+                        Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                        string TempUser = Linea.substr(0, Linea.find(","));
+                        if (TempUser == User)
+                        {
+                            Sesion.User = User;
+                            Sesion.IDU = IDTemp;
+                            Sesion.Grupo = Grupo;
+                        }
+                        Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                        if (Linea == Pass && Sesion.IDU != -1)
+                        {
+                            Contra = true;
+                        }
+                    }
+                }
+            }
+            if (Sesion.IDU != -1 && Contra)
+            {
+                string Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+                while (Usuarios_txt.find("\n") != string::npos)
+                {
+
+                    string Linea = Usuarios_txt.substr(0, Usuarios_txt.find("\n"));
+                    Usuarios_txt = Usuarios_txt.substr(Usuarios_txt.find("\n") + 1, Usuarios_txt.length());
+                    int IDTemp = stoi(Linea.substr(0, Linea.find(",")));
+                    if (IDTemp != 0)
+                    {
+                        Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                        string Type = Linea.substr(0, Linea.find(","));
+                        Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                        if (Type == "G")
+                        {
+                            if (Linea == Sesion.Grupo)
+                            {
+                                Sesion.IDG = IDTemp;
+                                cout << "Sesion Iniciada con exito" << endl;
+                                return;
+                            }
+                        }
+                    }
+                }
+                cout << "Error inesperado, grupo no encontrado" << endl;
+            }
+            else
+            {
+                cout << "Error, usuario o contraseña incorrecta" << endl;
+            }
+            Sesion.Active = Temp;
+            Sesion.User = "";
+            Sesion.Grupo = "";
+            Sesion.IDU = -1;
+            Sesion.IDG = -1;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+        file.close();
+    }
+    else
+    {
+        cout << "Error, ID no encontrada" << endl;
+    }
+}
+
+string LeerArchivo(int InodoInit)
+{
+    MountPart Activa = Sesion.Active;
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    string Contenido = "";
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        TablaInodo Aux;
+        file.seekg(InodoInit);
+        file.read(reinterpret_cast<char *>(&Aux), sizeof(Aux));
+        for (int i = 0; i < 15; i++)
+        {
+            if (Aux.i_block[i] != -1)
+            {
+                if (i < 12)
+                {
+                    BloqueArchivos Temp;
+                    file.seekg(SB.s_block_start + ((Aux.i_block[i] - 1) * sizeof(Temp)));
+                    file.read(reinterpret_cast<char *>(&Temp), sizeof(Temp));
+                    Contenido += Temp.b_content;
+                }
+                else
+                {
+                    file.close();
+                    Contenido += LeerPorApuntadores(SB.s_inode_start, Aux.i_block[i], (12 - i));
+                    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+                }
+            }
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+    return Contenido;
+}
+
+string LeerPorApuntadores(int blocke_start, int Blocke, int Nivel)
+{
+    MountPart Activa = Sesion.Active;
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    string Contenido = "";
+    if (file.is_open())
+    {
+        BloqueApuntadores Aux;
+        file.seekg(blocke_start + ((Blocke - 1) * sizeof(Aux)));
+        file.read(reinterpret_cast<char *>(&Aux), sizeof(Aux));
+        for (int i = 0; i < 16; i++)
+        {
+            if (Aux.b_pointers[i] != -1)
+            {
+                if (Nivel == 0)
+                {
+                    BloqueArchivos Temp;
+                    file.seekg(blocke_start + ((Aux.b_pointers[i] - 1) * sizeof(Temp)));
+                    file.read(reinterpret_cast<char *>(&Temp), sizeof(Temp));
+                    Contenido += Temp.b_content;
+                }
+                else
+                {
+                    file.close();
+                    Contenido += LeerPorApuntadores(blocke_start, Aux.b_pointers[i], (Nivel - i));
+                    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+                }
+            }
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+    return Contenido;
 }
 
 void LeerScript(string Path)
@@ -1799,5 +2319,180 @@ void VerMounts()
         {
             break;
         }
+    }
+}
+
+void VerInfo(string ID)
+{
+    int ActiveParticion = -1;
+    for (int i = 0; i < 10; i++)
+    {
+        if (ID == ActivePart[i].ID)
+        {
+            ActiveParticion = i;
+            break;
+        }
+    }
+    if (ActiveParticion != -1)
+    {
+        MountPart Activa = ActivePart[ActiveParticion];
+        fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+        if (file.is_open())
+        {
+            SuperBloque SB;
+            file.seekg(Activa.part_start);
+            file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+            cout << "Superbloque: " << endl;
+            cout << "\tFileSystem Tipe: " << SB.s_filesystem_type << endl;
+            cout << "\tInodes Count: " << SB.s_inodes_count << endl;
+            cout << "\tBlocks Count: " << SB.s_blocks_count << endl;
+            cout << "\tFree Inodes Count: " << SB.s_free_inodes_count << endl;
+            cout << "\tFree Blocks Count: " << SB.s_free_blocks_count << endl;
+            cout << "\tmTime: " << ctime(&SB.s_mtime);
+            cout << "\tmTime: " << ctime(&SB.s_umtime);
+            cout << "\tMnt Count: " << SB.s_mnt_count << endl;
+            cout << "\tMagic: " << SB.s_magic << endl;
+            cout << "\tInodes s: " << SB.s_inode_s << endl;
+            cout << "\tBlocks s: " << SB.s_block_s << endl;
+            cout << "\tFirst Ino: " << SB.s_first_ino << endl;
+            cout << "\tFirst Blo: " << SB.s_first_blo << endl;
+            cout << "\tBM Inode Start: " << SB.s_bm_inode_start << endl;
+            cout << "\tBM Block Start: " << SB.s_bm_block_start << endl;
+            cout << "\tInode Start: " << SB.s_inode_start << endl;
+            cout << "\tBlock Start: " << SB.s_block_start << endl;
+            cout << "\tBitmap Inodos: " << endl;
+            cout << "\t\t";
+            for (int i = 0; i < SB.s_inodes_count; i++)
+            {
+                char Val;
+                file.seekg(SB.s_bm_inode_start + i);
+                file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+                if (Val == '1')
+                {
+                    cout << "1";
+                }
+                else
+                {
+                    cout << "0";
+                }
+                if (i % 25 != 24 && i != SB.s_inodes_count - 1)
+                {
+                    cout << ",";
+                }
+                else if (i != SB.s_inodes_count - 1)
+                {
+                    cout << "\n\t\t";
+                }
+                else
+                {
+                    cout << "\n";
+                }
+            }
+            if (SB.s_filesystem_type == 3)
+            {
+            }
+            cout << "\tBitmap Blocks: " << endl
+                 << "\t\t";
+            for (int i = 0; i < SB.s_blocks_count; i++)
+            {
+                char Val;
+                file.seekg(SB.s_bm_block_start + i);
+                file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+                if (Val == '1')
+                {
+                    cout << "1";
+                }
+                else
+                {
+                    cout << "0";
+                }
+                if (i % 25 != 24 && i != SB.s_blocks_count - 1)
+                {
+                    cout << ",";
+                }
+                else if (i != SB.s_blocks_count - 1)
+                {
+                    cout << "\n\t\t";
+                }
+                else
+                {
+                    cout << "\n";
+                }
+            }
+            cout << "\tInodos: " << endl;
+            for (int i = 0; i < SB.s_inodes_count; i++)
+            {
+                char Val;
+                file.seekg(SB.s_bm_inode_start + i);
+                file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+                if (Val == '1')
+                {
+                    TablaInodo InodoActual;
+                    file.seekg(SB.s_inode_start + (i * sizeof(TablaInodo)));
+                    file.read(reinterpret_cast<char *>(&InodoActual), sizeof(InodoActual));
+                    cout << "\t\tInodo " << i << ": " << endl;
+                    cout << "\t\t\tUID: " << InodoActual.i_uid << endl;
+                    cout << "\t\t\tGID: " << InodoActual.i_gid << endl;
+                    cout << "\t\t\tSize: " << InodoActual.i_size << endl;
+                    cout << "\t\t\taTime: " << ctime(&InodoActual.i_atime);
+                    cout << "\t\t\tcTime: " << ctime(&InodoActual.i_ctime);
+                    cout << "\t\t\tmTime: " << ctime(&InodoActual.i_mtime);
+                    for (int j = 0; j < 15; j++)
+                    {
+                        cout << "\t\t\tBlock " << (j + 1) << ": " << to_string(InodoActual.i_block[j]) << endl;
+                    }
+                    cout << "\t\t\tType: " << to_string(InodoActual.i_type) << endl;
+                    cout << "\t\t\tPerm: " << InodoActual.i_perm << endl;
+                }
+            }
+            cout << "\tBlocks: " << endl;
+            for (int i = 0; i < SB.s_blocks_count; i++)
+            {
+                char Val;
+                file.seekg(SB.s_bm_block_start + i);
+                file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+                if (Val == '1')
+                {
+                    BloqueApuntadores BAP;
+                    BloqueArchivos BAR;
+                    BloqueCarpeta BC;
+                    file.seekg(SB.s_block_start + (i * sizeof(BloqueApuntadores)));
+                    file.read(reinterpret_cast<char *>(&BAP), sizeof(BAP));
+                    file.seekg(SB.s_block_start + (i * sizeof(BloqueApuntadores)));
+                    file.read(reinterpret_cast<char *>(&BAR), sizeof(BAR));
+                    file.seekg(SB.s_block_start + (i * sizeof(BloqueApuntadores)));
+                    file.read(reinterpret_cast<char *>(&BC), sizeof(BC));
+                    cout << "\t\tBloque " << (i + 1) << ": " << endl;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        cout << "\t\t\tCarpeta_content_name_" << (j + 1) << ": " << BC.b_content[j].b_name << endl;
+                        cout << "\t\t\tCarpeta_content_inodo_" << (j + 1) << ": " << BC.b_content[j].b_inodo << endl;
+                    }
+                    cout << "\t\t\tarchivo_content: " << BAR.b_content << endl;
+                    for (int j = 0; j < 16; j++)
+                    {
+                        cout << "\t\t\tApuntados_pointer" << (j + 1) << ": " << BAP.b_pointers[j] << endl;
+                    }
+                }
+            }
+            MountPart Temp = Sesion.Active;
+            Sesion.Active = Activa;
+            string Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+            Sesion.Active = Temp;
+            if (Usuarios_txt != "")
+            {
+                cout << "Usuarios: " << endl;
+                cout << Usuarios_txt;
+            }
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+        file.close();
+    }
+    else
+    {
+        cout << "Error, ID no encontrada" << endl;
     }
 }
