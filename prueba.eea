@@ -28,8 +28,12 @@ unmount >id=002Disco1
 seemounts
 #Comentario
 mkfs >id=001Disco1
-pause
 seeInfo >id=001Disco1
-
 login >user=root >pass=123 >id=001Disco1
+mkgrp >name=users1
+mkgrp >name=users2
+seeInfo >id=001Disco1
+pause
+rmgrp >name=users2
+seeInfo >id=001Disco1
 logout
