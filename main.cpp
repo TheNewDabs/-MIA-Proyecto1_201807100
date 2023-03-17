@@ -139,11 +139,22 @@ void FormatearParticion(string, string, string);
 void Login(string, string, string);
 void AgregarGrupo(string);
 void EliminarGrupo(string);
+void AgregarUsuario(string, string, string);
+void EliminarUsuario(string);
+void MKFILE(string, bool, int, string);
 string LeerArchivo(int);
 string LeerPorApuntadores(int, int, int);
 void ModificarArchivo(int, string);
 string ModificacionBloqueArchivo(int, string, int);
+int BuscarCarpeta(int, string);
+int BuscarCarpetaEnBloque(int, string, int);
+bool CrearCarpeta(int, string);
+bool CrearCarpetaEnBloque(int, string, int, int);
+bool CrearArchivo(int, string, int, string);
+bool CrearArchivoEnBloque(int, string, int, int, int, string);
+bool ComprobarPermiso(int, bool, bool, bool);
 int FirstFreeBlock();
+int FirstFreeInode();
 string Valor(string &);
 void CrearPath(string);
 string getName(string);
@@ -593,6 +604,11 @@ bool LeerComando(string Linea)
                             cout << "Error, no puede ingresar un nombre vacio" << endl;
                             Error = true;
                         }
+                        else if (Name.length() > 10)
+                        {
+                            cout << "Error, el nombre es demaciado largo" << endl;
+                            Error = true;
+                        }
                         BName = true;
                     }
                     else
@@ -636,6 +652,11 @@ bool LeerComando(string Linea)
                             cout << "Error, no puede ingresar un nombre vacio" << endl;
                             Error = true;
                         }
+                        else if (Name.length() > 10)
+                        {
+                            cout << "Error, el nombre es demaciado largo" << endl;
+                            Error = true;
+                        }
                         BName = true;
                     }
                     else
@@ -660,6 +681,166 @@ bool LeerComando(string Linea)
             else
             {
                 cout << "Error, Solo el usuario root puede eliminar grupos" << endl;
+            }
+        }
+        else if (strLower(Aux) == "mkusr")
+        {
+            string User, Pass, GRP;
+            bool BUser = false, BPass = false, BGRP = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">user")
+                {
+                    User = Valor(Linea);
+                    if (User.length() < 1)
+                    {
+                        cout << "Error, no puede ingresar un nombre de usuario vacio" << endl;
+                        Error = true;
+                    }
+                    else if (User.length() > 10)
+                    {
+                        cout << "Error, el nombre de usuario es demaciado largo" << endl;
+                        Error = true;
+                    }
+                    BUser = true;
+                }
+                else if (strLower(Aux) == ">pass")
+                {
+                    Pass = Valor(Linea);
+                    if (Pass.length() < 1)
+                    {
+                        cout << "Error, no puede ingresar un nombre de usuario vacio" << endl;
+                        Error = true;
+                    }
+                    else if (Pass.length() > 10)
+                    {
+                        cout << "Error, el nombre de usuario es demaciado largo" << endl;
+                        Error = true;
+                    }
+                    BPass = true;
+                }
+                else if (strLower(Aux) == ">grp")
+                {
+                    GRP = Valor(Linea);
+                    if (GRP.length() < 1)
+                    {
+                        cout << "Error, no puede ingresar un nombre de usuario vacio" << endl;
+                        Error = true;
+                    }
+                    else if (GRP.length() > 10)
+                    {
+                        cout << "Error, el nombre de usuario es demaciado largo" << endl;
+                        Error = true;
+                    }
+                    BGRP = true;
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BUser && BPass && BGRP && !Error)
+            {
+                AgregarUsuario(User, Pass, GRP);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
+        }
+        else if (strLower(Aux) == "rmusr")
+        {
+            if (Sesion.User == "root      ")
+            {
+                string Name = "";
+                bool BName = false;
+                while (Linea != "" && !Error)
+                {
+                    Aux = Valor(Linea);
+                    if (strLower(Aux) == ">user")
+                    {
+                        Name = Valor(Linea);
+                        if (Name.length() < 1)
+                        {
+                            cout << "Error, no puede ingresar un nombre vacio" << endl;
+                            Error = true;
+                        }
+                        else if (Name.length() > 10)
+                        {
+                            cout << "Error, el nombre es demaciado largo" << endl;
+                            Error = true;
+                        }
+                        BName = true;
+                    }
+                    else
+                    {
+                        Error = true;
+                        cout << "Error, Parametro desconocido" << endl;
+                    }
+                }
+                if (BName && !Error)
+                {
+                    EliminarUsuario(Name);
+                }
+                else if (!Error)
+                {
+                    cout << "Error, Faltan parametros" << endl;
+                }
+            }
+            else if (Sesion.User == "")
+            {
+                cout << "Error, No tiene sesion activa" << endl;
+            }
+            else
+            {
+                cout << "Error, Solo el usuario root puede eliminar grupos" << endl;
+            }
+        }
+        else if (strLower(Aux) == "mkfile")
+        {
+            string Path, Cont = "";
+            int Size = 0;
+            bool BPath = false, R = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">path")
+                {
+                    Path = Valor(Linea);
+                    BPath = true;
+                }
+                else if (strLower(Aux) == ">r")
+                {
+                    R = true;
+                }
+                else if (strLower(Aux) == ">size")
+                {
+                    Size = stoi(Valor(Linea));
+                    if (Size <= 0)
+                    {
+                        Error = true;
+                        cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
+                    }
+                }
+                else if (strLower(Aux) == ">cont")
+                {
+                    Cont = Valor(Linea);
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BPath && !Error)
+            {
+                MKFILE(Path, R, Size, Cont);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
             }
         }
         else if (strLower(Aux) == "seedisk")
@@ -1941,7 +2122,7 @@ void FormatearParticion(string ID, string Type, string FS)
             time(&Raiz.i_ctime);
             time(&Raiz.i_mtime);
             Raiz.i_type = 0;
-            Raiz.i_perm = 777777777;
+            Raiz.i_perm = 777;
             Raiz.i_block[0] = 1;
             for (int i = 1; i < 15; i++)
             {
@@ -1987,7 +2168,7 @@ void FormatearParticion(string ID, string Type, string FS)
             time(&Users.i_ctime);
             time(&Users.i_mtime);
             Users.i_type = 1;
-            Users.i_perm = 777777000;
+            Users.i_perm = 700;
             Users.i_block[0] = 2;
             for (int i = 1; i < 15; i++)
             {
@@ -2178,6 +2359,7 @@ void AgregarGrupo(string Name)
         Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
         Usuarios_txt += to_string(IDMayor + 1) + ", G, " + Name + "\n";
         ModificarArchivo((SB.s_inode_start + sizeof(TablaInodo)), Usuarios_txt);
+        cout << "Grupo creado con exito" << endl;
         file.close();
     }
     else
@@ -2216,13 +2398,20 @@ void EliminarGrupo(string Name)
                 if (Type == "G" && Linea == Name)
                 {
                     Aux += "0, G, " + Name + "\n";
-                }else{
+                }
+                else
+                {
                     Aux += Temp + "\n";
                 }
+            }
+            else
+            {
+                Aux += Temp + "\n";
             }
         }
         Usuarios_txt = Aux;
         ModificarArchivo((SB.s_inode_start + sizeof(TablaInodo)), Usuarios_txt);
+        cout << "Grupo eliminado exitosamente" << endl;
         file.close();
     }
     else
@@ -2230,6 +2419,208 @@ void EliminarGrupo(string Name)
         cout << "Error, no se pudo abrir el archivo" << endl;
         file.close();
     }
+}
+
+void AgregarUsuario(string User, string Pass, string GRP)
+{
+    while (User.length() < 10)
+    {
+        User += " ";
+    }
+    while (Pass.length() < 10)
+    {
+        Pass += " ";
+    }
+    while (GRP.length() < 10)
+    {
+        GRP += " ";
+    }
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+        int IDMayor = 0;
+        bool GrupoEncontrado = false;
+        while (Usuarios_txt.find("\n") != string::npos)
+        {
+            string Linea = Usuarios_txt.substr(0, Usuarios_txt.find("\n"));
+            Usuarios_txt = Usuarios_txt.substr(Usuarios_txt.find("\n") + 1, Usuarios_txt.length());
+            int IDTemp = stoi(Linea.substr(0, Linea.find(",")));
+            if (IDTemp != 0)
+            {
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                string Type = Linea.substr(0, Linea.find(","));
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                if (Type == "G")
+                {
+                    if (Linea == GRP)
+                    {
+                        GrupoEncontrado = true;
+                    }
+                }
+                else
+                {
+                    string UserName = Linea.substr(0, Linea.find(","));
+                    Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                    if (User == UserName)
+                    {
+                        cout << "Error, ya existe un usuario con este nombre" << endl;
+                        return;
+                    }
+                    else if (IDMayor < IDTemp)
+                    {
+                        IDMayor = IDTemp;
+                    }
+                }
+            }
+        }
+        if (GrupoEncontrado)
+        {
+            Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+            Usuarios_txt += to_string(IDMayor + 1) + ", U, " + User + ", " + GRP + ", " + Pass + "\n";
+            ModificarArchivo((SB.s_inode_start + sizeof(TablaInodo)), Usuarios_txt);
+            cout << "Usuario creado con exito" << endl;
+        }
+        else
+        {
+            cout << "Error, el grupo ingresado no existe" << endl;
+        }
+        file.close();
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+        file.close();
+    }
+}
+
+void EliminarUsuario(string Name)
+{
+    while (Name.length() < 10)
+    {
+        Name += " ";
+    }
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+        string Aux = "";
+        int IDMayor = 0;
+        while (Usuarios_txt.find("\n") != string::npos)
+        {
+            string Linea = Usuarios_txt.substr(0, Usuarios_txt.find("\n"));
+            string Temp = Linea;
+            Usuarios_txt = Usuarios_txt.substr(Usuarios_txt.find("\n") + 1, Usuarios_txt.length());
+            int IDTemp = stoi(Linea.substr(0, Linea.find(",")));
+            if (IDTemp != 0)
+            {
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                string Type = Linea.substr(0, Linea.find(","));
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                if (Type == "U")
+                {
+                    string User = Linea.substr(0, Linea.find(","));
+                    Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                    if (User == Name)
+                    {
+                        Aux += "0, G, " + Name + ", " + Linea + "\n";
+                    }
+                    else
+                    {
+                        Aux += Temp + "\n";
+                    }
+                }
+                else
+                {
+                    Aux += Temp + "\n";
+                }
+            }
+            else
+            {
+                Aux += Temp + "\n";
+            }
+        }
+        Usuarios_txt = Aux;
+        ModificarArchivo((SB.s_inode_start + sizeof(TablaInodo)), Usuarios_txt);
+        cout << "Usuario eleminado con exito" << endl;
+        file.close();
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+        file.close();
+    }
+}
+
+void MKFILE(string Path, bool R, int Size, string Cont)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Path[0] == '/')
+        {
+            file.close();
+            int InodoActual = SB.s_inode_start;
+            Path = Path.substr(1, Path.length());
+            string SubPath = "/";
+            bool Error = false;
+            while (Path.find("/") != string::npos)
+            {
+                string Name = Path.substr(0, Path.find("/"));
+                Path = Path.substr(Path.find("/") + 1, Path.length());
+                int NextInodo = BuscarCarpeta(InodoActual, Name);
+                if (NextInodo != -1)
+                {
+                    InodoActual = SB.s_inode_start + (NextInodo * sizeof(TablaInodo));
+                }
+                else
+                {
+                    if (R)
+                    {
+                        if (ComprobarPermiso(InodoActual, false, true, false))
+                        {
+                            CrearCarpeta(InodoActual, Name);
+                            NextInodo = BuscarCarpeta(InodoActual, Name);
+                            InodoActual = SB.s_inode_start + (NextInodo * sizeof(TablaInodo));
+                        }
+                        else
+                        {
+                            cout << "Error, no tiene permisos para crear una carpeta en \"" << SubPath << "\"" << endl;
+                        }
+                    }
+                    else
+                    {
+                        cout << "Error, no existe la carpeta \"" << SubPath << Name << "\"" << endl;
+                        Error = true;
+                        break;
+                    }
+                }
+                SubPath += Name + "/";
+            }
+            if (!Error)
+            {
+                CrearArchivo(InodoActual, Path, Size, Cont);
+            }
+        }
+        else
+        {
+            cout << "Error, el path debe iniciar en la carpeta raiz" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
 }
 
 string LeerArchivo(int InodoInit)
@@ -2324,6 +2715,9 @@ void ModificarArchivo(int InodoInit, string Texto)
         TablaInodo Archivo;
         file.seekg(InodoInit);
         file.read(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
+        file.seekg(InodoInit);
+        Archivo.i_size = Texto.length();
+        file.write(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
         file.close();
         for (int i = 0; i < 15; i++)
         {
@@ -2337,7 +2731,16 @@ void ModificarArchivo(int InodoInit, string Texto)
                     }
                     else
                     {
+                        fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                        file.seekg(SB.s_bm_block_start + (Archivo.i_block[i] - 1));
+                        file.write(reinterpret_cast<char *>(&BM0), sizeof(BM0));
                         Archivo.i_block[i] = -1;
+                        file.seekg(InodoInit);
+                        file.write(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
+                        SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                        file.seekg(Sesion.Active.part_start);
+                        file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                        file.close();
                     }
                 }
                 else if (Texto != "")
@@ -2353,13 +2756,54 @@ void ModificarArchivo(int InodoInit, string Texto)
                     Archivo.i_block[i] = Nuevo + 1;
                     file.seekg(InodoInit);
                     file.write(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
                     file.close();
                     Texto = ModificacionBloqueArchivo(Archivo.i_block[i], Texto, 0);
                 }
             }
             else
             {
-                Texto = ModificacionBloqueArchivo(Archivo.i_block[i], Texto, i - 11);
+                if (Archivo.i_block[i] != -1)
+                {
+                    Texto = ModificacionBloqueArchivo(Archivo.i_block[i], Texto, i - 11);
+                    if (Texto == "")
+                    {
+                        fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                        file.seekg(SB.s_bm_block_start + (Archivo.i_block[i] - 1));
+                        file.write(reinterpret_cast<char *>(&BM0), sizeof(BM0));
+                        Archivo.i_block[i] = -1;
+                        file.seekg(InodoInit);
+                        file.write(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
+                        SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                        file.seekg(Sesion.Active.part_start);
+                        file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                        file.close();
+                    }
+                }
+                else if (Texto != "")
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueApuntadores NuevoBloque;
+                    for (int j = 0; j < 16; j++)
+                    {
+                        NuevoBloque.b_pointers[i] = -1;
+                    }
+                    file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueApuntadores)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    Archivo.i_block[i] = Nuevo + 1;
+                    file.seekg(InodoInit);
+                    file.write(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueApuntadores));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                    Texto = ModificacionBloqueArchivo(Archivo.i_block[i], Texto, i - 11);
+                }
             }
         }
     }
@@ -2406,6 +2850,65 @@ string ModificacionBloqueArchivo(int NumBloque, string Texto, int Nivel)
             file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueApuntadores)));
             file.read(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
             file.close();
+            for (int i = 0; i < 16; i++)
+            {
+                if (Archivo.b_pointers[i] != -1)
+                {
+                    if (Texto != "")
+                    {
+                        Texto = ModificacionBloqueArchivo(Archivo.b_pointers[i], Texto, Nivel - 1);
+                    }
+                    else
+                    {
+                        if (Nivel != 1)
+                        {
+                            ModificacionBloqueArchivo(Archivo.b_pointers[i], Texto, (Nivel - 1));
+                        }
+                        fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                        file.seekg(SB.s_bm_block_start + (Archivo.b_pointers[i] - 1));
+                        file.write(reinterpret_cast<char *>(&BM0), sizeof(BM0));
+                        Archivo.b_pointers[i] = -1;
+                        file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueArchivos)));
+                        file.write(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
+                        SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                        file.seekg(Sesion.Active.part_start);
+                        file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                        file.close();
+                    }
+                }
+                else if (Texto != "")
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    if (Nivel == 1)
+                    {
+                        BloqueArchivos NuevoBloque;
+                        strcpy(NuevoBloque.b_content, "");
+                        file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueArchivos)));
+                        file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    }
+                    else
+                    {
+                        BloqueApuntadores NuevoBloque;
+                        file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueApuntadores)));
+                        file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                        for (int j = 0; j < 16; j++)
+                        {
+                            NuevoBloque.b_pointers[i] = -1;
+                        }
+                    }
+                    Archivo.b_pointers[i] = Nuevo + 1;
+                    file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueArchivos)));
+                    file.write(reinterpret_cast<char *>(&Archivo), sizeof(Archivo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueApuntadores));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                    Texto = ModificacionBloqueArchivo(Archivo.b_pointers[i], Texto, i - 11);
+                }
+            }
         }
     }
     else
@@ -2414,6 +2917,654 @@ string ModificacionBloqueArchivo(int NumBloque, string Texto, int Nivel)
         cout << "Error, no se pudo abrir el archivo" << endl;
     }
     return Texto;
+}
+
+int BuscarCarpeta(int Inodo, string Name)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        TablaInodo Actual;
+        file.seekg(Inodo);
+        file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+        file.close();
+        for (int i = 0; i < 15; i++)
+        {
+            if (Actual.i_block[i] != -1)
+            {
+                if (i < 12)
+                {
+                    int Temp = BuscarCarpetaEnBloque((SB.s_block_start + ((Actual.i_block[i] - 1) * sizeof(BloqueCarpeta))), Name, 0);
+                    if (Temp != -1)
+                    {
+                        return Temp;
+                    }
+                }
+                else
+                {
+                    int Temp = BuscarCarpetaEnBloque((SB.s_block_start + ((Actual.i_block[i] - 1) * sizeof(BloqueCarpeta))), Name, (i - 11));
+                    if (Temp != -1)
+                    {
+                        return Temp;
+                    }
+                }
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+        file.close();
+    }
+    return -1;
+}
+
+int BuscarCarpetaEnBloque(int Block, string Name, int Nivel)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Nivel == 0)
+        {
+            BloqueCarpeta Actual;
+            file.seekg(Block);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+            file.close();
+            for (int i = 0; i < 4; i++)
+            {
+                if (Actual.b_content[i].b_inodo != -1)
+                {
+                    if (Name == Actual.b_content[i].b_name)
+                    {
+                        return Actual.b_content[i].b_inodo;
+                    }
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+        }
+        else
+        {
+            BloqueApuntadores Actual;
+            file.seekg(Block);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+            file.close();
+            for (int i = 0; i < 16; i++)
+            {
+                if (Actual.b_pointers[i] != -1)
+                {
+                    int Temp = BuscarCarpetaEnBloque((SB.s_block_start + ((Actual.b_pointers[i] - 1) * sizeof(BloqueCarpeta))), Name, (Nivel - 1));
+                    if (Temp != -1)
+                    {
+                        return Temp;
+                    }
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+        file.close();
+    }
+    return -1;
+}
+
+bool CrearCarpeta(int Inodo, string Nombre)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        TablaInodo InodoPadre;
+        file.seekg(Inodo);
+        file.read(reinterpret_cast<char *>(&InodoPadre), sizeof(InodoPadre));
+        file.close();
+        for (int i = 0; i < 15; i++)
+        {
+            if (i < 12)
+            {
+                if (InodoPadre.i_block[i] == -1)
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueCarpeta NuevoBloque;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        NuevoBloque.b_content[i].b_inodo = -1;
+                        strcpy(NuevoBloque.b_content[i].b_name, "");
+                    }
+                    file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueCarpeta)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    InodoPadre.i_block[i] = Nuevo + 1;
+                    file.seekg(Inodo);
+                    file.write(reinterpret_cast<char *>(&InodoPadre), sizeof(TablaInodo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                }
+                if (CrearCarpetaEnBloque((SB.s_block_start + ((InodoPadre.i_block[i] - 1) * sizeof(BloqueCarpeta))), Nombre, 0, Inodo))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (InodoPadre.i_block[i] == -1)
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueApuntadores NuevoBloque;
+                    for (int j = 0; j < 16; j++)
+                    {
+                        NuevoBloque.b_pointers[j] = -1;
+                    }
+                    file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueArchivos)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    InodoPadre.i_block[i] = Nuevo + 1;
+                    file.seekg(Inodo);
+                    file.write(reinterpret_cast<char *>(&InodoPadre), sizeof(TablaInodo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                }
+                if (CrearCarpetaEnBloque((SB.s_block_start + ((InodoPadre.i_block[i] - 1) * sizeof(BloqueCarpeta))), Nombre, i - 11, Inodo))
+                {
+                    return true;
+                }
+            }
+        }
+        cout << "Error, no hay espacio para mas carpetas" << endl;
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return false;
+}
+
+bool CrearCarpetaEnBloque(int Bloque, string Nombre, int Nivel, int Anterior)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Nivel == 0)
+        {
+            BloqueCarpeta Actual;
+            file.seekg(Bloque);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+            file.close();
+            for (int i = 0; i < 4; i++)
+            {
+                if (Actual.b_content[i].b_inodo == -1)
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeInode();
+                    file.seekg(SB.s_bm_inode_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    TablaInodo NuevoInodo;
+                    NuevoInodo.i_uid = Sesion.IDU;
+                    NuevoInodo.i_gid = Sesion.IDG;
+                    NuevoInodo.i_size = 0;
+                    time(&NuevoInodo.i_atime);
+                    time(&NuevoInodo.i_ctime);
+                    time(&NuevoInodo.i_mtime);
+                    NuevoInodo.i_block[0] = FirstFreeBlock() + 1;
+                    for (int j = 1; j < 15; j++)
+                    {
+                        NuevoInodo.i_block[j] = -1;
+                    }
+                    NuevoInodo.i_type = 0;
+                    NuevoInodo.i_perm = 664;
+                    file.seekg(SB.s_inode_start + (Nuevo * sizeof(TablaInodo)));
+                    file.write(reinterpret_cast<char *>(&NuevoInodo), sizeof(NuevoInodo));
+                    Actual.b_content[i].b_inodo = Nuevo;
+                    strcpy(Actual.b_content[i].b_name, Nombre.c_str());
+                    int NuevoB = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + NuevoB);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueCarpeta NuevoBloque;
+                    NuevoBloque.b_content[0].b_inodo = Nuevo;
+                    strcpy(NuevoBloque.b_content[0].b_name, ".");
+                    NuevoBloque.b_content[1].b_inodo = (Anterior - SB.s_inode_start) / sizeof(TablaInodo);
+                    strcpy(NuevoBloque.b_content[1].b_name, "..");
+                    NuevoBloque.b_content[2].b_inodo = -1;
+                    strcpy(NuevoBloque.b_content[2].b_name, "");
+                    NuevoBloque.b_content[3].b_inodo = -1;
+                    strcpy(NuevoBloque.b_content[3].b_name, "");
+                    file.seekg(SB.s_block_start + (NuevoB * sizeof(BloqueCarpeta)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    file.seekg(Bloque);
+                    file.write(reinterpret_cast<char *>(&Actual), sizeof(BloqueCarpeta));
+                    SB.s_first_ino = SB.s_inode_start + (FirstFreeInode() * sizeof(TablaInodo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueCarpeta));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                    return true;
+                }
+            }
+            return false;
+        }
+        else
+        {
+            BloqueApuntadores Actual;
+            file.seekg(Bloque);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(BloqueApuntadores));
+            file.close();
+            for (int i = 0; i < 16; i++)
+            {
+                if (Actual.b_pointers[i] == -1)
+                {
+                    if (Nivel == 1)
+                    {
+                        fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                        int Nuevo = FirstFreeBlock();
+                        file.seekg(SB.s_bm_block_start + Nuevo);
+                        file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                        BloqueCarpeta NuevoBloque;
+                        for (int j = 0; j < 4; j++)
+                        {
+                            NuevoBloque.b_content[i].b_inodo = -1;
+                            strcpy(NuevoBloque.b_content[i].b_name, "");
+                        }
+                        file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueCarpeta)));
+                        file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                        Actual.b_pointers[i] = Nuevo + 1;
+                        file.seekg(Bloque);
+                        file.write(reinterpret_cast<char *>(&Actual), sizeof(BloqueApuntadores));
+                        SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                        file.seekg(Sesion.Active.part_start);
+                        file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                        file.close();
+                        return true;
+                    }
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueApuntadores NuevoBloque;
+                    for (int j = 0; j < 16; j++)
+                    {
+                        NuevoBloque.b_pointers[j] = -1;
+                    }
+                    file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueApuntadores)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    Actual.b_pointers[i] = Nuevo + 1;
+                    file.seekg(Bloque);
+                    file.write(reinterpret_cast<char *>(&Actual), sizeof(BloqueApuntadores));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                    if (CrearCarpetaEnBloque((SB.s_block_start + ((Actual.b_pointers[i] - 1) * sizeof(BloqueCarpeta))), Nombre, i - 11, Anterior))
+                    {
+                        return true;
+                    }
+                }
+                else if (CrearCarpetaEnBloque((SB.s_block_start + ((Actual.b_pointers[i] - 1) * sizeof(BloqueCarpeta))), Nombre, i - 11, Anterior))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return false;
+}
+
+bool CrearArchivo(int Inodo, string Nombre, int Size, string Cont)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        TablaInodo InodoPadre;
+        file.seekg(Inodo);
+        file.read(reinterpret_cast<char *>(&InodoPadre), sizeof(InodoPadre));
+        file.close();
+        for (int i = 0; i < 15; i++)
+        {
+            if (i < 12)
+            {
+                if (InodoPadre.i_block[i] == -1)
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueCarpeta NuevoBloque;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        NuevoBloque.b_content[i].b_inodo = -1;
+                        strcpy(NuevoBloque.b_content[i].b_name, "");
+                    }
+                    file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueCarpeta)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    InodoPadre.i_block[i] = Nuevo + 1;
+                    file.seekg(Inodo);
+                    file.write(reinterpret_cast<char *>(&InodoPadre), sizeof(TablaInodo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                }
+                if (CrearArchivoEnBloque((SB.s_block_start + ((InodoPadre.i_block[i] - 1) * sizeof(BloqueCarpeta))), Nombre, 0, Inodo, Size, Cont))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (InodoPadre.i_block[i] == -1)
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueApuntadores NuevoBloque;
+                    for (int j = 0; j < 16; j++)
+                    {
+                        NuevoBloque.b_pointers[j] = -1;
+                    }
+                    file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueArchivos)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    InodoPadre.i_block[i] = Nuevo + 1;
+                    file.seekg(Inodo);
+                    file.write(reinterpret_cast<char *>(&InodoPadre), sizeof(TablaInodo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                }
+                if (CrearArchivoEnBloque((SB.s_block_start + ((InodoPadre.i_block[i] - 1) * sizeof(BloqueCarpeta))), Nombre, i - 11, Inodo, Size, Cont))
+                {
+                    return true;
+                }
+            }
+        }
+        cout << "Error, no hay espacio para mas carpetas" << endl;
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return false;
+}
+
+bool CrearArchivoEnBloque(int Bloque, string Nombre, int Nivel, int Anterior, int Size, string Cont)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Nivel == 0)
+        {
+            BloqueCarpeta Actual;
+            file.seekg(Bloque);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+            file.close();
+            for (int i = 0; i < 4; i++)
+            {
+                if (Actual.b_content[i].b_inodo == -1)
+                {
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeInode();
+                    file.seekg(SB.s_bm_inode_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    TablaInodo NuevoInodo;
+                    NuevoInodo.i_uid = Sesion.IDU;
+                    NuevoInodo.i_gid = Sesion.IDG;
+                    NuevoInodo.i_size = 0;
+                    time(&NuevoInodo.i_atime);
+                    time(&NuevoInodo.i_ctime);
+                    time(&NuevoInodo.i_mtime);
+                    for (int j = 0; j < 15; j++)
+                    {
+                        NuevoInodo.i_block[j] = -1;
+                    }
+                    NuevoInodo.i_type = 1;
+                    NuevoInodo.i_perm = 664;
+                    file.seekg(SB.s_inode_start + (Nuevo * sizeof(TablaInodo)));
+                    file.write(reinterpret_cast<char *>(&NuevoInodo), sizeof(NuevoInodo));
+                    Actual.b_content[i].b_inodo = Nuevo;
+                    strcpy(Actual.b_content[i].b_name, Nombre.c_str());
+                    file.seekg(Bloque);
+                    file.write(reinterpret_cast<char *>(&Actual), sizeof(BloqueCarpeta));
+                    SB.s_first_ino = SB.s_inode_start + (FirstFreeInode() * sizeof(TablaInodo));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueCarpeta));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                    if (Size != 0)
+                    {
+                        string SizeText = "";
+                        for (int j = 1; j < Size; j++)
+                        {
+                            SizeText += " ";
+                        }
+                        ModificarArchivo((SB.s_inode_start + (Nuevo * sizeof(TablaInodo))), SizeText);
+                    }
+                    else if (Cont != "")
+                    {
+                        ifstream Archivo(Cont.c_str());
+                        if(Archivo.is_open()){
+                            string ContText = "";
+                            while(!Archivo.eof()){
+                                ContText += Archivo.get();
+                            }
+                            ModificarArchivo((SB.s_inode_start + (Nuevo * sizeof(TablaInodo))), ContText.substr(0,ContText.length()-1));
+                        }else{
+                            cout << "Error, No se pudo abrir el archivo fuente, archivo creado sin información" << endl;
+                        }
+
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+        else
+        {
+            BloqueApuntadores Actual;
+            file.seekg(Bloque);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(BloqueApuntadores));
+            file.close();
+            for (int i = 0; i < 16; i++)
+            {
+                if (Actual.b_pointers[i] == -1)
+                {
+                    if (Nivel == 1)
+                    {
+                        fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                        int Nuevo = FirstFreeBlock();
+                        file.seekg(SB.s_bm_block_start + Nuevo);
+                        file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                        BloqueCarpeta NuevoBloque;
+                        for (int j = 0; j < 4; j++)
+                        {
+                            NuevoBloque.b_content[i].b_inodo = -1;
+                            strcpy(NuevoBloque.b_content[i].b_name, "");
+                        }
+                        file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueCarpeta)));
+                        file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                        Actual.b_pointers[i] = Nuevo + 1;
+                        file.seekg(Bloque);
+                        file.write(reinterpret_cast<char *>(&Actual), sizeof(BloqueApuntadores));
+                        SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                        file.seekg(Sesion.Active.part_start);
+                        file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                        file.close();
+                        if (CrearArchivoEnBloque((SB.s_block_start + ((Actual.b_pointers[i] - 1) * sizeof(BloqueCarpeta))), Nombre, i - 11, Anterior, Size, Cont))
+                        {
+                            return true;
+                        }
+                    }
+                    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                    int Nuevo = FirstFreeBlock();
+                    file.seekg(SB.s_bm_block_start + Nuevo);
+                    file.write(reinterpret_cast<char *>(&BM1), sizeof(BM1));
+                    BloqueApuntadores NuevoBloque;
+                    for (int j = 0; j < 16; j++)
+                    {
+                        NuevoBloque.b_pointers[j] = -1;
+                    }
+                    file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueApuntadores)));
+                    file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
+                    Actual.b_pointers[i] = Nuevo + 1;
+                    file.seekg(Bloque);
+                    file.write(reinterpret_cast<char *>(&Actual), sizeof(BloqueApuntadores));
+                    SB.s_first_blo = SB.s_block_start + (FirstFreeBlock() * sizeof(BloqueArchivos));
+                    file.seekg(Sesion.Active.part_start);
+                    file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
+                    file.close();
+                    if (CrearArchivoEnBloque((SB.s_block_start + ((Actual.b_pointers[i] - 1) * sizeof(BloqueCarpeta))), Nombre, i - 11, Anterior, Size, Cont))
+                    {
+                        return true;
+                    }
+                }
+                else if (CrearArchivoEnBloque((SB.s_block_start + ((Actual.b_pointers[i] - 1) * sizeof(BloqueCarpeta))), Nombre, i - 11, Anterior, Size, Cont))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return false;
+}
+
+bool ComprobarPermiso(int Inodo, bool Lectura, bool Escritura, bool Ejecucion)
+{
+    if (Sesion.User == "root      ")
+    {
+        return true;
+    }
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        TablaInodo Actual;
+        file.seekg(Inodo);
+        file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+        file.close();
+        int U, G, O;
+        U = Actual.i_perm;
+        O = U % 10;
+        U = (U - O) / 10;
+        G = U % 10;
+        U = (U - G) / 10;
+        int Permiso;
+        if (Actual.i_uid == Sesion.IDU)
+        {
+            Permiso = U;
+        }
+        else if (Actual.i_gid = Sesion.IDG)
+        {
+            Permiso = G;
+        }
+        else
+        {
+            Permiso = O;
+        }
+        bool ALectura, AEscritura, AEjecucion;
+        switch (Permiso)
+        {
+        case 1:
+            ALectura = false;
+            AEscritura = false;
+            AEjecucion = true;
+            break;
+        case 2:
+            ALectura = false;
+            AEscritura = true;
+            AEjecucion = false;
+            break;
+        case 3:
+            ALectura = false;
+            AEscritura = true;
+            AEjecucion = true;
+            break;
+        case 4:
+            ALectura = true;
+            AEscritura = false;
+            AEjecucion = false;
+            break;
+        case 5:
+            ALectura = true;
+            AEscritura = false;
+            AEjecucion = true;
+            break;
+        case 6:
+            Lectura = true;
+            AEscritura = true;
+            AEjecucion = false;
+            break;
+        case 7:
+            Lectura = true;
+            AEscritura = true;
+            AEjecucion = true;
+            break;
+        default:
+            ALectura = false;
+            AEscritura = false;
+            AEjecucion = false;
+        }
+        if ((Lectura && !ALectura) || (Escritura && !AEscritura) || (Ejecucion && !AEjecucion))
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return false;
 }
 
 int FirstFreeBlock()
