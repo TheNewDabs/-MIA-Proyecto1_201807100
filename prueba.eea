@@ -1,38 +1,31 @@
 mkdisk >size=200 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco0.dsk" >fit=BF >unit=k
 mkdisk >size=1024 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >fit=FF >unit=m
 rmdisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco0.dsk
-FDISK >size=300 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion1
-FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion2 >fit=bF
+FDISK >size=50 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion1 >unit=M
+FDISK >size=60 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion2 >fit=bF >unit=M
 FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion3 >type=E >unit=M
 FDISK >size=50 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion4 >unit=M
 FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL1 >fit=bF >type=L
 FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >fit=bF >type=L
 FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL3 >fit=bF >type=L
-seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
 FDISK >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion2 >delete=full
 FDISK >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >delete=full
 FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >fit=WF >type=L
-seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
 FDISK >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion3 >delete=full
-seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
 FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=Particion3 >type=E >unit=M
-FDISK >size=400 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL1 >fit=bF >type=L
-FDISK >size=500 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >fit=bF >type=L
-seedisk >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk
+FDISK >size=80 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL1 >fit=bF >type=L >unit=M
+FDISK >size=20 >path=/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk >name=ParticionL2 >fit=bF >type=L >unit=M
+mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=Particion1
 mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=Particion1
 mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=ParticionL2
 mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=Particion3
 mount >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Disco1.dsk" >name=ParticionL1
-seemounts
 unmount >id=002Disco1
-seemounts
 #Comentario
 mkfs >id=001Disco1
-seeInfo >id=001Disco1
 login >user=root >pass=123 >id=001Disco1
 mkgrp >name=Usuarios
 mkgrp >name=Usuarios2
-seeInfo >id=001Disco1
 rmgrp >name=Usuarios2
 mkusr >user=user1 >pass=qwer >grp=Usuarios
 mkusr >user=userRoot >pass=asdf >grp=root
@@ -40,8 +33,17 @@ mkusr >user=userRoot >pass=ghjk >grp=root
 mkusr >user=userRoot >pass=tyui >grp=root2
 mkusr >user=user2 >pass=zxcv >grp=Usuarios
 rmusr >user=userRoot
-seeInfo >id=001Disco1
-pause
 mkfile >path="/home/dabs/pruebas/hola.txt" >r >cont="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/archivo1.txt"
-seeInfo >id=001Disco1
+cat >File1="/home/dabs/pruebas/hola.txt"
+#seeinfo >id=001Disco1
+pause
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteMBR.png" >name=mbr
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteDSK.png" >name=disk
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteInode.png" >name=inode
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteBlock.png" >name=block
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteBM_Inode.txt" >name=bm_inode
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteBM_Blocke.txt" >name=bm_block
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteTree.png" >name=tree
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteSB.png" >name=sb
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteFile.txt" >name=file >ruta="/home/dabs/pruebas/hola.txt" 
 logout

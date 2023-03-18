@@ -126,6 +126,8 @@ struct MBR
 
 void Inicializaciones();
 string strLower(string);
+long double intToLong(int);
+long double intToLongD(long);
 bool LeerComando(string);
 void LeerScript(string);
 void CrearDisco(int, string, string, string);
@@ -142,6 +144,24 @@ void EliminarGrupo(string);
 void AgregarUsuario(string, string, string);
 void EliminarUsuario(string);
 void MKFILE(string, bool, int, string);
+void CAT(string);
+void REMOVE(string);
+void REP(string, string, string, string);
+void REPMBR(string, MountPart);
+void REPDISK(string, MountPart);
+void REPInode(string, MountPart);
+
+void REPBlock(string, MountPart);
+string REPBlockInode(MountPart, int);
+string REPBlockBlock(MountPart, int, int, int);
+void REPBMInode(string, MountPart);
+void REPBMBlocke(string, MountPart);
+void REPTree(string, MountPart);
+string REPTreeInode(MountPart, int);
+string REPTreeBlock(MountPart, int, int, int);
+void REPSB(string, MountPart);
+void REPFile(string, MountPart, string);
+
 string LeerArchivo(int);
 string LeerPorApuntadores(int, int, int);
 void ModificarArchivo(int, string);
@@ -152,6 +172,7 @@ bool CrearCarpeta(int, string);
 bool CrearCarpetaEnBloque(int, string, int, int);
 bool CrearArchivo(int, string, int, string);
 bool CrearArchivoEnBloque(int, string, int, int, int, string);
+void EliminarInodo(int, string);
 bool ComprobarPermiso(int, bool, bool, bool);
 int FirstFreeBlock();
 int FirstFreeInode();
@@ -199,6 +220,11 @@ string strLower(string Text)
     for (int i = 0; i < Text.length(); i++)
         Text[i] = tolower(Text[i]);
     return Text;
+}
+
+long double intToLong(int var)
+{
+    return static_cast<long>(var);
 }
 
 bool LeerComando(string Linea)
@@ -800,48 +826,127 @@ bool LeerComando(string Linea)
         }
         else if (strLower(Aux) == "mkfile")
         {
-            string Path, Cont = "";
-            int Size = 0;
-            bool BPath = false, R = false;
-            while (Linea != "" && !Error)
+            if (Sesion.User != "")
             {
-                Aux = Valor(Linea);
-                if (strLower(Aux) == ">path")
+                string Path, Cont = "";
+                int Size = 0;
+                bool BPath = false, R = false;
+                while (Linea != "" && !Error)
                 {
-                    Path = Valor(Linea);
-                    BPath = true;
-                }
-                else if (strLower(Aux) == ">r")
-                {
-                    R = true;
-                }
-                else if (strLower(Aux) == ">size")
-                {
-                    Size = stoi(Valor(Linea));
-                    if (Size <= 0)
+                    Aux = Valor(Linea);
+                    if (strLower(Aux) == ">path")
+                    {
+                        Path = Valor(Linea);
+                        BPath = true;
+                    }
+                    else if (strLower(Aux) == ">r")
+                    {
+                        R = true;
+                    }
+                    else if (strLower(Aux) == ">size")
+                    {
+                        Size = stoi(Valor(Linea));
+                        if (Size <= 0)
+                        {
+                            Error = true;
+                            cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
+                        }
+                    }
+                    else if (strLower(Aux) == ">cont")
+                    {
+                        Cont = Valor(Linea);
+                    }
+                    else
                     {
                         Error = true;
-                        cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
+                        cout << "Error, Parametro desconocido" << endl;
                     }
                 }
-                else if (strLower(Aux) == ">cont")
+                if (BPath && !Error)
                 {
-                    Cont = Valor(Linea);
+                    MKFILE(Path, R, Size, Cont);
                 }
-                else
+                else if (!Error)
                 {
-                    Error = true;
-                    cout << "Error, Parametro desconocido" << endl;
+                    cout << "Error, Faltan parametros" << endl;
                 }
             }
-            if (BPath && !Error)
+        }
+        else if (strLower(Aux) == "cat")
+        {
+            if (Sesion.User != "")
             {
-                MKFILE(Path, R, Size, Cont);
+                string File[9] = {""};
+                bool BFile = false;
+                while (Linea != "" && !Error)
+                {
+                    Aux = Valor(Linea);
+                    bool Opcion = false;
+                    for (int i = 0; i < 9; i++)
+                    {
+                        if (strLower(Aux) == (">file" + to_string(i + 1)))
+                        {
+                            File[i] = Valor(Linea);
+                            BFile = true;
+                            Opcion = true;
+                            break;
+                        }
+                    }
+                    if (!Opcion)
+                    {
+                        Error = true;
+                        cout << "Error, Parametro desconocido" << endl;
+                    }
+                }
+                if (BFile && !Error)
+                {
+                    for (int i = 0; i < 9; i++)
+                    {
+                        if (File[i] != "")
+                        {
+                            CAT(File[i]);
+                        }
+                    }
+                }
+                else if (!Error)
+                {
+                    cout << "Error, Faltan parametros" << endl;
+                }
             }
-            else if (!Error)
-            {
-                cout << "Error, Faltan parametros" << endl;
-            }
+        }
+        else if (strLower(Aux) == "remove")
+        {
+            
+        }
+        else if (strLower(Aux) == "edit")
+        {
+            
+        }
+        else if (strLower(Aux) == "rename")
+        {
+            
+        }
+        else if (strLower(Aux) == "mkdir")
+        {
+            
+        }else if (strLower(Aux) == "copy")
+        {
+            
+        }else if (strLower(Aux) == "move")
+        {
+            
+        }else if (strLower(Aux) == "fine")
+        {
+            
+        }else if (strLower(Aux) == "chown")
+        {
+            
+        }else if (strLower(Aux) == "chgrp")
+        {
+            
+        }else if (strLower(Aux) == "chmod")
+        {
+            
         }
         else if (strLower(Aux) == "seedisk")
         {
@@ -909,6 +1014,44 @@ bool LeerComando(string Linea)
         }
         else if (strLower(Aux) == "rep")
         {
+            string Name, Path, ID, Ruta = "";
+            bool BName = false, BPath = false, BID = false;
+            while (Linea != "" && !Error)
+            {
+                Aux = Valor(Linea);
+                if (strLower(Aux) == ">name")
+                {
+                    Name = Valor(Linea);
+                    BName = true;
+                }
+                else if (strLower(Aux) == ">path")
+                {
+                    Path = Valor(Linea);
+                    BPath = true;
+                }
+                else if (strLower(Aux) == ">id")
+                {
+                    ID = Valor(Linea);
+                    BID = true;
+                }
+                else if (strLower(Aux) == ">ruta")
+                {
+                    Ruta = Valor(Linea);
+                }
+                else
+                {
+                    Error = true;
+                    cout << "Error, Parametro desconocido" << endl;
+                }
+            }
+            if (BName && BPath && BID && !Error)
+            {
+                REP(Name, Path, ID, Ruta);
+            }
+            else if (!Error)
+            {
+                cout << "Error, Faltan parametros" << endl;
+            }
         }
         else if (strLower(Aux) == "exit")
         {
@@ -925,16 +1068,8 @@ bool LeerComando(string Linea)
 void CrearDisco(int Size, string Path, string Fit, string Unit)
 {
     MBR NewMBR;
-    if (strLower(Unit) == "k")
-    {
-        NewMBR.mbr_tamano = Size * 1024;
-    }
-    else
-    {
-        NewMBR.mbr_tamano = Size * 1024 * 1024;
-    }
     time(&NewMBR.mbr_fecha_creacion);
-    NewMBR.mbr_dsk_signature = rand() % 10;
+    NewMBR.mbr_dsk_signature = rand() % 100;
     if (strLower(Fit) == "bf")
     {
         NewMBR.mbr_fit = 'b';
@@ -971,14 +1106,27 @@ void CrearDisco(int Size, string Path, string Fit, string Unit)
     strcpy(NewMBR.mbr_partition_2.part_name, "");
     strcpy(NewMBR.mbr_partition_3.part_name, "");
     strcpy(NewMBR.mbr_partition_4.part_name, "");
-    char data[NewMBR.mbr_tamano / 1024] = {0};
     CrearPath(Path);
     fstream file(Path, ios::binary | ios::out | ios::trunc);
     if (file.is_open())
     {
-        for (int i = 0; i < 1024; i++)
+        if (strLower(Unit) == "k")
         {
-            file.write(data, 1024);
+            NewMBR.mbr_tamano = Size * 1024;
+            char data[1024] = {0};
+            for (int i = 0; i < Size; i++)
+            {
+                file.write(data, 1024);
+            }
+        }
+        else
+        {
+            NewMBR.mbr_tamano = Size * 1024 * 1024;
+            char data[1024 * 1024] = {0};
+            for (int i = 0; i < Size; i++)
+            {
+                file.write(data, 1024 * 1024);
+            }
         }
         file.seekg(0);
         file.write(reinterpret_cast<char *>(&NewMBR), sizeof(NewMBR));
@@ -1886,6 +2034,16 @@ void MountParticion(string Path, string Name)
             file.close();
             break;
         }
+        else
+        {
+            string NameParticion = ActivePart[i].part_name;
+            if (Path == ActivePart[i].Path && Name == NameParticion)
+            {
+                cout << "Error, la particion ya esta montada" << endl;
+                Mount = true;
+                break;
+            }
+        }
     }
     if (!Mount)
     {
@@ -2609,6 +2767,1266 @@ void MKFILE(string Path, bool R, int Size, string Cont)
             if (!Error)
             {
                 CrearArchivo(InodoActual, Path, Size, Cont);
+                cout << "Archivo creado con exito" << endl;
+            }
+        }
+        else
+        {
+            cout << "Error, el path debe iniciar en la carpeta raiz" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void CAT(string Path)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Path[0] == '/')
+        {
+            file.close();
+            int InodoActual = SB.s_inode_start;
+            Path = Path.substr(1, Path.length());
+            string SubPath = "/";
+            bool Error = false;
+            while (Path.find("/") != string::npos)
+            {
+                string Name = Path.substr(0, Path.find("/"));
+                Path = Path.substr(Path.find("/") + 1, Path.length());
+                int NextInodo = BuscarCarpeta(InodoActual, Name);
+                if (NextInodo != -1)
+                {
+                    InodoActual = SB.s_inode_start + (NextInodo * sizeof(TablaInodo));
+                }
+                else
+                {
+                    cout << "Error, no existe la carpeta \"" << SubPath << Name << "\"" << endl;
+                    Error = true;
+                    break;
+                }
+                SubPath += Name + "/";
+            }
+            SubPath += Path;
+            InodoActual = SB.s_inode_start + (BuscarCarpeta(InodoActual, Path) * sizeof(TablaInodo));
+            if (!Error)
+            {
+                fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                TablaInodo InodoArchivo;
+                file.seekg(InodoActual);
+                file.read(reinterpret_cast<char *>(&InodoArchivo), sizeof(InodoArchivo));
+                file.close();
+                if (InodoArchivo.i_type == 1)
+                {
+                    string Content = LeerArchivo(InodoActual);
+                    cout << "Archivo: \"" << SubPath << "\"" << endl;
+                    cout << "-------------------------------------" << endl;
+                    cout << Content.substr(0, Content.length() - 1) << endl;
+                    cout << "-------------------------------------" << endl;
+                }
+                else
+                {
+                    cout << "Error, se intento leer una carpeta" << endl;
+                }
+            }
+        }
+        else
+        {
+            cout << "Error, el path debe iniciar en la carpeta raiz" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REMOVE(string Path)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Path[0] == '/')
+        {
+            file.close();
+            int InodoActual = SB.s_inode_start;
+            Path = Path.substr(1, Path.length());
+            string SubPath = "/";
+            bool Error = false;
+            while (Path.find("/") != string::npos)
+            {
+                string Name = Path.substr(0, Path.find("/"));
+                Path = Path.substr(Path.find("/") + 1, Path.length());
+                int NextInodo = BuscarCarpeta(InodoActual, Name);
+                if (NextInodo != -1)
+                {
+                    InodoActual = SB.s_inode_start + (NextInodo * sizeof(TablaInodo));
+                }
+                else
+                {
+                    cout << "Error, no existe la carpeta \"" << SubPath << Name << "\"" << endl;
+                    Error = true;
+                    break;
+                }
+                SubPath += Name + "/";
+            }
+            SubPath += Path;
+            InodoActual = SB.s_inode_start + (BuscarCarpeta(InodoActual, Path) * sizeof(TablaInodo));
+            if (!Error)
+            {
+            }
+        }
+        else
+        {
+            cout << "Error, el path debe iniciar en la carpeta raiz" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REP(string Name, string Path, string ID, string Ruta)
+{
+    int ActiveParticion = -1;
+    for (int i = 0; i < 10; i++)
+    {
+        if (ID == ActivePart[i].ID)
+        {
+            ActiveParticion = i;
+            break;
+        }
+    }
+    if (ActiveParticion != -1)
+    {
+        if (strLower(Name) == "mbr")
+        {
+            REPMBR(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "disk")
+        {
+            REPDISK(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "inode")
+        {
+            REPInode(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "journaling")
+        {
+        }
+        else if (strLower(Name) == "block")
+        {
+            REPBlock(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "bm_inode")
+        {
+            REPBMInode(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "bm_block")
+        {
+            REPBMBlocke(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "tree")
+        {
+            REPTree(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "sb")
+        {
+            REPSB(Path, ActivePart[ActiveParticion]);
+        }
+        else if (strLower(Name) == "file")
+        {
+            REPFile(Ruta, ActivePart[ActiveParticion], Path);
+        }
+        else if (strLower(Name) == "is")
+        {
+        }
+        else
+        {
+            cout << "Error, tipo de reporte no incluido" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, ID no encontrada" << endl;
+    }
+}
+
+void REPMBR(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        MBR MBRDsk;
+        file.read(reinterpret_cast<char *>(&MBRDsk), sizeof(MBRDsk));
+        string Report = "digraph G {\n\tMBR [\n\tshape=plaintext\n\tlabel=<\n\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#00B6AB\">Reporte MBR</td></tr>\n\t\t\t<tr><td>mbr_tamano</td><td>" + to_string(MBRDsk.mbr_tamano) + "</td></tr>\n\t\t\t<tr><td>fecha_creacion</td><td>";
+        Report += ctime(&MBRDsk.mbr_fecha_creacion);
+        Report = Report.substr(0, Report.length() - 1);
+        Report += "</td></tr>\n\t\t\t<tr><td>mbr_dsk_signature</td><td>" + to_string(MBRDsk.mbr_dsk_signature) + "</td></tr>\n";
+        if (MBRDsk.mbr_partition_1.part_status == 'A')
+        {
+            Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#13A901\">partition 1.</td></tr>\n\t\t\t<tr><td>part_type</td><td>";
+            Report += MBRDsk.mbr_partition_1.part_type;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+            Report += MBRDsk.mbr_partition_1.part_fit;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(MBRDsk.mbr_partition_1.part_start) + "</td></tr>\n";
+            Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(MBRDsk.mbr_partition_1.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+            Report += MBRDsk.mbr_partition_1.part_name;
+            Report += "</td></tr>\n";
+            if (MBRDsk.mbr_partition_1.part_type == 'E')
+            {
+                int Aux = MBRDsk.mbr_partition_1.part_start;
+                int Cont = 1;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#CBDF00\">Logical Partition " + to_string(Cont) + ".</td></tr>\n\t\t\t<tr><td>part_status</td><td>";
+                    Report += EBRAux.part_status;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+                    Report += EBRAux.part_fit;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(EBRAux.part_start) + "</td></tr>\n";
+                    Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(EBRAux.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+                    Report += EBRAux.part_name;
+                    Report += "</td></tr>\n";
+                    Aux = EBRAux.part_next;
+                    Cont++;
+                }
+            }
+        }
+        if (MBRDsk.mbr_partition_2.part_status == 'A')
+        {
+            Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#13A901\">partition 2.</td></tr>\n\t\t\t<tr><td>part_type</td><td>";
+            Report += MBRDsk.mbr_partition_2.part_type;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+            Report += MBRDsk.mbr_partition_2.part_fit;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(MBRDsk.mbr_partition_2.part_start) + "</td></tr>\n";
+            Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(MBRDsk.mbr_partition_2.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+            Report += MBRDsk.mbr_partition_2.part_name;
+            Report += "</td></tr>\n";
+            if (MBRDsk.mbr_partition_2.part_type == 'E')
+            {
+                int Aux = MBRDsk.mbr_partition_2.part_start;
+                int Cont = 1;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#CBDF00\">Logical Partition " + to_string(Cont) + ".</td></tr>\n\t\t\t<tr><td>part_status</td><td>";
+                    Report += EBRAux.part_status;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+                    Report += EBRAux.part_fit;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(EBRAux.part_start) + "</td></tr>\n";
+                    Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(EBRAux.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+                    Report += EBRAux.part_name;
+                    Report += "</td></tr>\n";
+                    Aux = EBRAux.part_next;
+                    Cont++;
+                }
+            }
+        }
+        if (MBRDsk.mbr_partition_3.part_status == 'A')
+        {
+            Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#13A901\">partition 3.</td></tr>\n\t\t\t<tr><td>part_type</td><td>";
+            Report += MBRDsk.mbr_partition_3.part_type;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+            Report += MBRDsk.mbr_partition_3.part_fit;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(MBRDsk.mbr_partition_3.part_start) + "</td></tr>\n";
+            Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(MBRDsk.mbr_partition_3.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+            Report += MBRDsk.mbr_partition_3.part_name;
+            Report += "</td></tr>\n";
+            if (MBRDsk.mbr_partition_3.part_type == 'E')
+            {
+                int Aux = MBRDsk.mbr_partition_3.part_start;
+                int Cont = 1;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#CBDF00\">Logical Partition " + to_string(Cont) + ".</td></tr>\n\t\t\t<tr><td>part_status</td><td>";
+                    Report += EBRAux.part_status;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+                    Report += EBRAux.part_fit;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(EBRAux.part_start) + "</td></tr>\n";
+                    Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(EBRAux.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+                    Report += EBRAux.part_name;
+                    Report += "</td></tr>\n";
+                    Aux = EBRAux.part_next;
+                    Cont++;
+                }
+            }
+        }
+        if (MBRDsk.mbr_partition_4.part_status == 'A')
+        {
+            Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#13A901\">partition 4.</td></tr>\n\t\t\t<tr><td>part_type</td><td>";
+            Report += MBRDsk.mbr_partition_4.part_type;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+            Report += MBRDsk.mbr_partition_4.part_fit;
+            Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(MBRDsk.mbr_partition_4.part_start) + "</td></tr>\n";
+            Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(MBRDsk.mbr_partition_4.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+            Report += MBRDsk.mbr_partition_4.part_name;
+            Report += "</td></tr>\n";
+            if (MBRDsk.mbr_partition_4.part_type == 'E')
+            {
+                int Aux = MBRDsk.mbr_partition_4.part_start;
+                int Cont = 1;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    Report += "\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#CBDF00\">Logical Partition " + to_string(Cont) + ".</td></tr>\n\t\t\t<tr><td>part_status</td><td>";
+                    Report += EBRAux.part_status;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_fit</td><td>";
+                    Report += EBRAux.part_fit;
+                    Report += "</td></tr>\n\t\t\t<tr><td>part_start</td><td>" + to_string(EBRAux.part_start) + "</td></tr>\n";
+                    Report += "\t\t\t<tr><td>part_size</td><td>" + to_string(EBRAux.part_size) + "</td></tr>\n\t\t\t<tr><td>part_name</td><td>";
+                    Report += EBRAux.part_name;
+                    Report += "</td></tr>\n";
+                    Aux = EBRAux.part_next;
+                    Cont++;
+                }
+            }
+        }
+        Report += "\t\t</table>\n\t>];\n}";
+        CrearPath("Reportes_gen/MBR.dot");
+        fstream Archivo("Reportes_gen/MBR.dot", ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            CrearPath(Path);
+            string Comando = "dot -Tpng Reportes_gen/MBR.dot -o " + Path;
+            system(Comando.c_str());
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REPDISK(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        MBR MBRDsk;
+        file.read(reinterpret_cast<char *>(&MBRDsk), sizeof(MBRDsk));
+        string DiskName = Path;
+        while (DiskName.find("/") != string::npos)
+        {
+            DiskName = DiskName.substr(Path.find("/") + 1, Path.length());
+        }
+        string Report = "digraph G {\n";
+        Report += "\tMBR [\n\tshape=plaintext\n\tlabel=<\n\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t<tr><td COLSPAN=\"8\">Reporte MBR</td></tr>\n\t\t\t<tr>\n\t\t\t\t<td>MBR</td>\n";
+        int FinAnterior = sizeof(MBRDsk);
+        long double Porcentaje = 0;
+        if (MBRDsk.mbr_partition_1.part_status == 'A')
+        {
+            if (FinAnterior != MBRDsk.mbr_partition_1.part_start)
+            {
+                Porcentaje = ((intToLong(MBRDsk.mbr_partition_1.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            if (MBRDsk.mbr_partition_1.part_type == 'P')
+            {
+                Porcentaje = (intToLong(MBRDsk.mbr_partition_1.part_size) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Primaria</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            else
+            {
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Extendida</td></tr>\n\t\t\t\t\t<tr><td>\n\t\t\t\t\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t\t\t\t\t<tr>\n";
+                FinAnterior = MBRDsk.mbr_partition_1.part_start;
+                int Aux = MBRDsk.mbr_partition_1.part_start;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    if (FinAnterior != EBRAux.part_start)
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    Report += "\t\t\t\t\t\t\t\t<td>EBR</td>\n";
+                    if (EBRAux.part_status == 'A')
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_size) - sizeof(EBRAux)) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Logica</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    FinAnterior = EBRAux.part_start + EBRAux.part_size;
+                    Aux = EBRAux.part_next;
+                }
+                if (FinAnterior != (MBRDsk.mbr_partition_1.part_start + MBRDsk.mbr_partition_1.part_size))
+                {
+                    Porcentaje = ((intToLong(MBRDsk.mbr_partition_1.part_start + MBRDsk.mbr_partition_1.part_size) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                    Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                }
+                Report += "\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</table>\n\t\t\t\t\t</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            FinAnterior = MBRDsk.mbr_partition_1.part_start + MBRDsk.mbr_partition_1.part_size;
+        }
+
+        if (MBRDsk.mbr_partition_2.part_status == 'A')
+        {
+            if (FinAnterior != MBRDsk.mbr_partition_2.part_start)
+            {
+                Porcentaje = ((intToLong(MBRDsk.mbr_partition_2.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            if (MBRDsk.mbr_partition_2.part_type == 'P')
+            {
+                Porcentaje = (intToLong(MBRDsk.mbr_partition_2.part_size) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Primaria</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            else
+            {
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Extendida</td></tr>\n\t\t\t\t\t<tr><td>\n\t\t\t\t\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t\t\t\t\t<tr>\n";
+                FinAnterior = MBRDsk.mbr_partition_2.part_start;
+                int Aux = MBRDsk.mbr_partition_2.part_start;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    if (FinAnterior != EBRAux.part_start)
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    Report += "\t\t\t\t\t\t\t\t<td>EBR</td>\n";
+                    if (EBRAux.part_status == 'A')
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_size) - sizeof(EBRAux)) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Logica</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    FinAnterior = EBRAux.part_start + EBRAux.part_size;
+                    Aux = EBRAux.part_next;
+                }
+                if (FinAnterior != (MBRDsk.mbr_partition_2.part_start + MBRDsk.mbr_partition_2.part_size))
+                {
+                    Porcentaje = ((intToLong(MBRDsk.mbr_partition_2.part_start + MBRDsk.mbr_partition_2.part_size) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                    Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                }
+                Report += "\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</table>\n\t\t\t\t\t</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            FinAnterior = MBRDsk.mbr_partition_2.part_start + MBRDsk.mbr_partition_2.part_size;
+        }
+
+        if (MBRDsk.mbr_partition_3.part_status == 'A')
+        {
+            if (FinAnterior != MBRDsk.mbr_partition_3.part_start)
+            {
+                Porcentaje = ((intToLong(MBRDsk.mbr_partition_3.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            if (MBRDsk.mbr_partition_3.part_type == 'P')
+            {
+                Porcentaje = (intToLong(MBRDsk.mbr_partition_3.part_size) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Primaria</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            else
+            {
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Extendida</td></tr>\n\t\t\t\t\t<tr><td>\n\t\t\t\t\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t\t\t\t\t<tr>\n";
+                FinAnterior = MBRDsk.mbr_partition_3.part_start;
+                int Aux = MBRDsk.mbr_partition_3.part_start;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    if (FinAnterior != EBRAux.part_start)
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    Report += "\t\t\t\t\t\t\t\t<td>EBR</td>\n";
+                    if (EBRAux.part_status == 'A')
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_size) - sizeof(EBRAux)) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Logica</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    FinAnterior = EBRAux.part_start + EBRAux.part_size;
+                    Aux = EBRAux.part_next;
+                }
+                if (FinAnterior != (MBRDsk.mbr_partition_3.part_start + MBRDsk.mbr_partition_3.part_size))
+                {
+                    Porcentaje = ((intToLong(MBRDsk.mbr_partition_3.part_start + MBRDsk.mbr_partition_3.part_size) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                    Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                }
+                Report += "\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</table>\n\t\t\t\t\t</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            FinAnterior = MBRDsk.mbr_partition_3.part_start + MBRDsk.mbr_partition_3.part_size;
+        }
+
+        if (MBRDsk.mbr_partition_4.part_status == 'A')
+        {
+            if (FinAnterior != MBRDsk.mbr_partition_4.part_start)
+            {
+                Porcentaje = ((intToLong(MBRDsk.mbr_partition_4.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            if (MBRDsk.mbr_partition_4.part_type == 'P')
+            {
+                Porcentaje = (intToLong(MBRDsk.mbr_partition_4.part_size) * 100 / intToLong(MBRDsk.mbr_tamano));
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Primaria</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            else
+            {
+                Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Extendida</td></tr>\n\t\t\t\t\t<tr><td>\n\t\t\t\t\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t\t\t\t\t<tr>\n";
+                FinAnterior = MBRDsk.mbr_partition_4.part_start;
+                int Aux = MBRDsk.mbr_partition_4.part_start;
+                while (Aux != -1)
+                {
+                    EBR EBRAux;
+                    file.seekg(Aux);
+                    file.read(reinterpret_cast<char *>(&EBRAux), sizeof(EBRAux));
+                    if (FinAnterior != EBRAux.part_start)
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_start) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    Report += "\t\t\t\t\t\t\t\t<td>EBR</td>\n";
+                    if (EBRAux.part_status == 'A')
+                    {
+                        Porcentaje = ((intToLong(EBRAux.part_size) - sizeof(EBRAux)) * 100 / intToLong(MBRDsk.mbr_tamano));
+                        Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Logica</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                    }
+                    FinAnterior = EBRAux.part_start + EBRAux.part_size;
+                    Aux = EBRAux.part_next;
+                }
+                if (FinAnterior != (MBRDsk.mbr_partition_4.part_start + MBRDsk.mbr_partition_4.part_size))
+                {
+                    Porcentaje = ((intToLong(MBRDsk.mbr_partition_4.part_start + MBRDsk.mbr_partition_4.part_size) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+                    Report += "\t\t\t\t\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t\t\t\t\t</table></td>\n";
+                }
+                Report += "\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</table>\n\t\t\t\t\t</td></tr>\n\t\t\t\t</table></td>\n";
+            }
+            FinAnterior = MBRDsk.mbr_partition_4.part_start + MBRDsk.mbr_partition_4.part_size;
+        }
+
+        if (MBRDsk.mbr_tamano != FinAnterior)
+        {
+
+            Porcentaje = ((intToLong(MBRDsk.mbr_tamano) - FinAnterior) * 100 / intToLong(MBRDsk.mbr_tamano));
+            Report += "\t\t\t\t<td><table border='0' cellborder='0' cellspacing='0'>\n\t\t\t\t\t<tr><td>Libre</td></tr>\n\t\t\t\t\t<tr><td>" + to_string(Porcentaje) + "%</td></tr>\n\t\t\t\t</table></td>\n";
+        }
+
+        Report += "\t\t\t</tr>\n\t\t</table>\n\t>];\n}";
+        CrearPath("Reportes_gen/DSK.dot");
+        fstream Archivo("Reportes_gen/DSK.dot", ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            CrearPath(Path);
+            string Comando = "dot -Tpng Reportes_gen/DSK.dot -o " + Path;
+            system(Comando.c_str());
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REPInode(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Report = "digraph G {\n\trankdir=LR;\n";
+        int Ant = -1;
+        for (int i = 0; i < SB.s_inodes_count; i++)
+        {
+            char Val;
+            file.seekg(SB.s_bm_inode_start + i);
+            file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+            if (Val == 1)
+            {
+                TablaInodo InodoActual;
+                file.seekg(SB.s_inode_start + (i * sizeof(TablaInodo)));
+                file.read(reinterpret_cast<char *>(&InodoActual), sizeof(InodoActual));
+                Report += "\tinode" + to_string(i) + " [\n";
+                Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0'>\n";
+                Report += "\t\t\t<tr><td COLSPAN=\"2\">inode" + to_string(i) + "</td></tr>\n";
+                Report += "\t\t\t<tr><td>i_uid</td><td>" + to_string(InodoActual.i_uid) + "</td></tr>\n";
+                Report += "\t\t\t<tr><td>i_gid</td><td>" + to_string(InodoActual.i_gid) + "</td></tr>\n";
+                Report += "\t\t\t<tr><td>i_size</td><td>" + to_string(InodoActual.i_size) + "</td></tr>\n\t\t\t<tr><td>i_atime</td><td>";
+                Report += ctime(&InodoActual.i_atime);
+                Report = Report.substr(0, Report.length() - 1);
+                Report += "</td></tr>\n\t\t\t<tr><td>i_ctime</td><td>";
+                Report += ctime(&InodoActual.i_ctime);
+                Report = Report.substr(0, Report.length() - 1);
+                Report += "</td></tr>\n\t\t\t<tr><td>i_mtime</td><td>";
+                Report += ctime(&InodoActual.i_mtime);
+                Report = Report.substr(0, Report.length() - 1);
+                Report += "</td></tr>\n";
+                for (int j = 0; j < 15; j++)
+                {
+                    Report += "\t\t\t<tr><td>i_block[" + to_string(j + 1) + "]</td><td>" + to_string(InodoActual.i_block[j]) + "</td></tr>\n";
+                }
+                Report += "\t\t\t<tr><td>i_type</td><td>" + to_string(InodoActual.i_type) + "</td></tr>\n";
+                Report += "\t\t\t<tr><td>i_perm</td><td>" + to_string(InodoActual.i_perm) + "</td></tr>\n\t\t</table>\n\t>];\n";
+                if (Ant != -1)
+                {
+                    Report += "\tinode" + to_string(Ant) + " -> inode" + to_string(i) + "\n";
+                }
+                Ant = i;
+            }
+        }
+        Report += "}";
+        CrearPath("Reportes_gen/Inode.dot");
+        fstream Archivo("Reportes_gen/Inode.dot", ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            CrearPath(Path);
+            string Comando = "dot -Tpng Reportes_gen/Inode.dot -o " + Path;
+            system(Comando.c_str());
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REPBlock(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Report = "digraph G {\n\trankdir=LR;\n";
+
+        int Ant = -1;
+        for (int i = 0; i < SB.s_blocks_count; i++)
+        {
+            char Val;
+            file.seekg(SB.s_bm_block_start + i);
+            file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+            if (Val == 1)
+            {
+                if (Ant != -1)
+                {
+                    Report += "\tblock" + to_string(Ant + 1) + " -> block" + to_string(i + 1) + "\n";
+                }
+                Ant = i;
+            }
+        }
+
+        file.close();
+        Report += REPBlockInode(Activa, 0);
+        Report += "}";
+        CrearPath("Reportes_gen/Block.dot");
+        fstream Archivo("Reportes_gen/Block.dot", ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            CrearPath(Path);
+            string Comando = "dot -Tpng Reportes_gen/Block.dot -o " + Path;
+            system(Comando.c_str());
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+}
+
+string REPBlockInode(MountPart Activa, int NumInode)
+{
+    string Report = "";
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        TablaInodo InodoActual;
+        file.seekg(SB.s_inode_start + (NumInode * sizeof(TablaInodo)));
+        file.read(reinterpret_cast<char *>(&InodoActual), sizeof(InodoActual));
+        file.close();
+        for (int i = 0; i < 15; i++)
+        {
+            if (InodoActual.i_block[i] != -1)
+            {
+                if (i < 12)
+                {
+                    Report += REPBlockBlock(Activa, InodoActual.i_block[i], InodoActual.i_type, 0);
+                }
+                else
+                {
+                    Report += REPBlockBlock(Activa, InodoActual.i_block[i], InodoActual.i_type, i - 11);
+                }
+            }
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return Report;
+}
+
+string REPBlockBlock(MountPart Activa, int NumBloque, int Type, int Apuntadores)
+{
+    string Report = "";
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        // Type: 0:Carpeta, 1:Archivo
+        if (Apuntadores == 0)
+        {
+            if (Type == 0)
+            {
+                BloqueCarpeta BloqueActual;
+                file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueActual)));
+                file.read(reinterpret_cast<char *>(&BloqueActual), sizeof(BloqueActual));
+                file.close();
+                Report += "\tblock" + to_string(NumBloque) + " [\n";
+                Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0' bgcolor=\"#E1DD00\">\n";
+                Report += "\t\t\t<tr><td COLSPAN=\"2\" port='cabeza'>Bloque " + to_string(NumBloque) + "</td></tr>\n";
+                for (int i = 0; i < 4; i++)
+                {
+                    Report += "\t\t\t<tr><td>";
+                    Report += BloqueActual.b_content[i].b_name;
+                    Report += "</td><td port='ap" + to_string(i) + "'>" + to_string(BloqueActual.b_content[i].b_inodo) + "</td></tr>\n";
+                }
+                Report += "\t\t</table>\n\t>];\n";
+                for (int i = 0; i < 4; i++)
+                {
+                    if (BloqueActual.b_content[i].b_inodo != -1)
+                    {
+                        string NameInode = BloqueActual.b_content[i].b_name;
+                        if (NameInode != ".." && NameInode != ".")
+                        {
+                            Report += REPBlockInode(Activa, BloqueActual.b_content[i].b_inodo);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                BloqueArchivos BloqueActual;
+                file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueActual)));
+                file.read(reinterpret_cast<char *>(&BloqueActual), sizeof(BloqueActual));
+                file.close();
+                Report += "\tblock" + to_string(NumBloque) + " [\n";
+                Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0' bgcolor=\"#E1DD00\">\n";
+                Report += "\t\t\t<tr><td COLSPAN=\"2\" port='cabeza'>Bloque " + to_string(NumBloque) + "</td></tr>\n\t\t\t<tr><td>";
+                string TempContent = BloqueActual.b_content;
+                TempContent = TempContent.substr(0, 64);
+                for (int i = 0; i < TempContent.length(); i++)
+                {
+                    if (TempContent[i] != '\n')
+                    {
+                        if (TempContent[i] != 2 && TempContent[i] >= 0 && TempContent[i] <= 127)
+                        {
+                            Report += TempContent[i];
+                        }
+                    }
+                    else
+                    {
+                        Report += "</td></tr>\n\t\t\t<tr><td>";
+                    }
+                }
+                Report += "</td></tr>\n\t\t</table>\n\t>];\n";
+            }
+        }
+        else
+        {
+            BloqueApuntadores BloqueActual;
+            file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueActual)));
+            file.read(reinterpret_cast<char *>(&BloqueActual), sizeof(BloqueActual));
+            file.close();
+            Report += "\tblock" + to_string(NumBloque) + " [\n";
+            Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0' bgcolor=\"#E1DD00\">\n";
+            Report += "\t\t\t<tr><td COLSPAN=\"2\" port='cabeza'>Bloque " + to_string(NumBloque) + "</td></tr>\n";
+            for (int i = 0; i < 16; i++)
+            {
+                Report += "\t\t\t<tr><td>b_pointers[" + to_string(i) + "]</td><td port='ap" + to_string(i) + "'>" + to_string(BloqueActual.b_pointers[i]) + "</td></tr>\n";
+            }
+            Report += "\t\t</table>\n\t>];\n";
+            for (int i = 0; i < 16; i++)
+            {
+                if (BloqueActual.b_pointers[i] != -1)
+                {
+                    Report += REPBlockBlock(Activa, BloqueActual.b_pointers[i], Type, Apuntadores - 1);
+                }
+            }
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return Report;
+}
+
+void REPBMInode(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Report = "";
+        for (int i = 0; i < SB.s_inodes_count; i++)
+        {
+            char Val;
+            file.seekg(SB.s_bm_inode_start + i);
+            file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+            if (Val == 1)
+            {
+                Report += "1";
+            }
+            else
+            {
+                Report += "0";
+            }
+            if (i % 25 != 24 && i != SB.s_inodes_count - 1)
+            {
+                Report += ",";
+            }
+            else
+            {
+                Report += "\n";
+            }
+        }
+        CrearPath(Path);
+        fstream Archivo(Path, ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REPBMBlocke(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Report = "";
+        for (int i = 0; i < SB.s_blocks_count; i++)
+        {
+            char Val;
+            file.seekg(SB.s_bm_block_start + i);
+            file.read(reinterpret_cast<char *>(&Val), sizeof(Val));
+            if (Val == 1)
+            {
+                Report += "1";
+            }
+            else
+            {
+                Report += "0";
+            }
+            if (i % 25 != 24 && i != SB.s_blocks_count - 1)
+            {
+                Report += ",";
+            }
+            else
+            {
+                Report += "\n";
+            }
+        }
+        CrearPath(Path);
+        fstream Archivo(Path, ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REPTree(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Report = "digraph G {\n\trankdir=LR;\n";
+        file.close();
+        Report += REPTreeInode(Activa, 0);
+        Report += "}";
+        CrearPath("Reportes_gen/Tree.dot");
+        fstream Archivo("Reportes_gen/Tree.dot", ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            CrearPath(Path);
+            string Comando = "dot -Tpng Reportes_gen/Tree.dot -o " + Path;
+            system(Comando.c_str());
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+}
+
+string REPTreeInode(MountPart Activa, int NumInode)
+{
+    string Report = "";
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        TablaInodo InodoActual;
+        file.seekg(SB.s_inode_start + (NumInode * sizeof(TablaInodo)));
+        file.read(reinterpret_cast<char *>(&InodoActual), sizeof(InodoActual));
+        file.close();
+        Report += "\tinode" + to_string(NumInode) + " [\n";
+        Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0'  bgcolor=\"#009EA9\">\n";
+        Report += "\t\t\t<tr><td COLSPAN=\"2\" port='cabeza'>inode " + to_string(NumInode) + "</td></tr>\n";
+        for (int i = 0; i < 15; i++)
+        {
+            Report += "\t\t\t<tr><td>i_block[" + to_string(i + 1) + "]</td><td port='ap" + to_string(i) + "'>" + to_string(InodoActual.i_block[i]) + "</td></tr>\n";
+        }
+        Report += "\t\t</table>\n\t>];\n";
+        for (int i = 0; i < 15; i++)
+        {
+            if (InodoActual.i_block[i] != -1)
+            {
+                Report += "\tinode" + to_string(NumInode) + ":ap" + to_string(i) + " -> block" + to_string(InodoActual.i_block[i]) + ":cabeza\n";
+                if (i < 12)
+                {
+                    Report += REPTreeBlock(Activa, InodoActual.i_block[i], InodoActual.i_type, 0);
+                }
+                else
+                {
+                    Report += REPTreeBlock(Activa, InodoActual.i_block[i], InodoActual.i_type, i - 11);
+                }
+            }
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return Report;
+}
+
+string REPTreeBlock(MountPart Activa, int NumBloque, int Type, int Apuntadores)
+{
+    string Report = "";
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        // Type: 0:Carpeta, 1:Archivo
+        if (Apuntadores == 0)
+        {
+            if (Type == 0)
+            {
+                BloqueCarpeta BloqueActual;
+                file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueActual)));
+                file.read(reinterpret_cast<char *>(&BloqueActual), sizeof(BloqueActual));
+                file.close();
+                Report += "\tblock" + to_string(NumBloque) + " [\n";
+                Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0' bgcolor=\"#E1DD00\">\n";
+                Report += "\t\t\t<tr><td COLSPAN=\"2\" port='cabeza'>Bloque " + to_string(NumBloque) + "</td></tr>\n";
+                for (int i = 0; i < 4; i++)
+                {
+                    Report += "\t\t\t<tr><td>";
+                    Report += BloqueActual.b_content[i].b_name;
+                    Report += "</td><td port='ap" + to_string(i) + "'>" + to_string(BloqueActual.b_content[i].b_inodo) + "</td></tr>\n";
+                }
+                Report += "\t\t</table>\n\t>];\n";
+                for (int i = 0; i < 4; i++)
+                {
+                    if (BloqueActual.b_content[i].b_inodo != -1)
+                    {
+                        string NameInode = BloqueActual.b_content[i].b_name;
+                        if (NameInode != ".." && NameInode != ".")
+                        {
+                            Report += "\tblock" + to_string(NumBloque) + ":ap" + to_string(i) + " -> inode" + to_string(BloqueActual.b_content[i].b_inodo) + ":cabeza\n";
+                            Report += REPTreeInode(Activa, BloqueActual.b_content[i].b_inodo);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                BloqueArchivos BloqueActual;
+                file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueActual)));
+                file.read(reinterpret_cast<char *>(&BloqueActual), sizeof(BloqueActual));
+                file.close();
+                Report += "\tblock" + to_string(NumBloque) + " [\n";
+                Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0' bgcolor=\"#E1DD00\">\n";
+                Report += "\t\t\t<tr><td COLSPAN=\"2\" port='cabeza'>Bloque " + to_string(NumBloque) + "</td></tr>\n\t\t\t<tr><td>";
+                string TempContent = BloqueActual.b_content;
+                TempContent = TempContent.substr(0, 64);
+                for (int i = 0; i < TempContent.length(); i++)
+                {
+                    if (TempContent[i] != '\n')
+                    {
+                        if (TempContent[i] != 2 && TempContent[i] >= 0)
+                        {
+                            Report += TempContent[i];
+                        }
+                    }
+                    else
+                    {
+                        Report += "</td></tr>\n\t\t\t<tr><td>";
+                    }
+                }
+                Report += "</td></tr>\n\t\t</table>\n\t>];\n";
+            }
+        }
+        else
+        {
+            BloqueApuntadores BloqueActual;
+            file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueActual)));
+            file.read(reinterpret_cast<char *>(&BloqueActual), sizeof(BloqueActual));
+            file.close();
+            Report += "\tblock" + to_string(NumBloque) + " [\n";
+            Report += "\tshape=plaintext\n\tlabel=<\n\t\t<table border='1' cellborder='0' cellspacing='0' bgcolor=\"#E1DD00\">\n";
+            Report += "\t\t\t<tr><td COLSPAN=\"2\" port='cabeza'>Bloque " + to_string(NumBloque) + "</td></tr>\n";
+            for (int i = 0; i < 16; i++)
+            {
+                Report += "\t\t\t<tr><td>b_pointers[" + to_string(i) + "]</td><td port='ap" + to_string(i) + "'>" + to_string(BloqueActual.b_pointers[i]) + "</td></tr>\n";
+            }
+            Report += "\t\t</table>\n\t>];\n";
+            for (int i = 0; i < 16; i++)
+            {
+                if (BloqueActual.b_pointers[i] != -1)
+                {
+                    Report += "\tblock" + to_string(NumBloque) + ":ap" + to_string(i) + " -> block" + to_string(BloqueActual.b_pointers[i]) + ":cabeza\n";
+                    Report += REPTreeBlock(Activa, BloqueActual.b_pointers[i], Type, Apuntadores - 1);
+                }
+            }
+        }
+    }
+    else
+    {
+        file.close();
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    return Report;
+}
+
+void REPSB(string Path, MountPart Activa)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Activa.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Report = "digraph G {\n";
+        Report += "\tSB [\n\tshape=plaintext\n\tlabel=<\n\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t<tr><td COLSPAN=\"2\" bgcolor=\"#00B6AB\">Reporte SB</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_filesystem_type</td><td>" + to_string(SB.s_filesystem_type) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_inodes_count</td><td>" + to_string(SB.s_inodes_count) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_blocks_count</td><td>" + to_string(SB.s_blocks_count) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_free_blocks_count</td><td>" + to_string(SB.s_free_inodes_count) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_free_inodes_count</td><td>" + to_string(SB.s_free_blocks_count) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_mtime</td><td>";
+        Report += ctime(&SB.s_mtime);
+        Report = Report.substr(0, Report.length() - 1);
+        Report += "</td></tr>\n\t\t\t<tr><td>s_umtime</td><td>";
+        Report += ctime(&SB.s_umtime);
+        Report = Report.substr(0, Report.length() - 1);
+        Report += "</td></tr>\n\t\t\t<tr><td>s_mnt_count</td><td>" + to_string(SB.s_mnt_count) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_magic</td><td>" + to_string(SB.s_magic) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_inode_s</td><td>" + to_string(SB.s_inode_s) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_block_s</td><td>" + to_string(SB.s_block_s) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_first_ino</td><td>" + to_string(SB.s_first_ino) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_first_blo</td><td>" + to_string(SB.s_first_blo) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_bm_inode_start</td><td>" + to_string(SB.s_bm_inode_start) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_bm_block_start</td><td>" + to_string(SB.s_bm_block_start) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_inode_start</td><td>" + to_string(SB.s_inode_start) + "</td></tr>\n";
+        Report += "\t\t\t<tr><td>s_block_start</td><td>" + to_string(SB.s_block_start) + "</td></tr>\n";
+        Report += "\t\t\t</table>\n\t>];\n}\n";
+        CrearPath("Reportes_gen/SB.dot");
+        fstream Archivo("Reportes_gen/SB.dot", ios::out | ios::trunc);
+        if (Archivo.is_open())
+        {
+            Archivo.seekg(0);
+            Archivo.write(Report.c_str(), Report.length());
+            Archivo.close();
+            CrearPath(Path);
+            string Comando = "dot -Tpng Reportes_gen/SB.dot -o " + Path;
+            system(Comando.c_str());
+            cout << "Reporte Creado con Exito" << endl;
+        }
+        else
+        {
+            cout << "Error, no se pudo abrir el archivo" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
+void REPFile(string Path, MountPart Activa, string Ruta)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Path[0] == '/')
+        {
+            file.close();
+            int InodoActual = SB.s_inode_start;
+            Path = Path.substr(1, Path.length());
+            string SubPath = "/";
+            bool Error = false;
+            while (Path.find("/") != string::npos)
+            {
+                string Name = Path.substr(0, Path.find("/"));
+                Path = Path.substr(Path.find("/") + 1, Path.length());
+                int NextInodo = BuscarCarpeta(InodoActual, Name);
+                if (NextInodo != -1)
+                {
+                    InodoActual = SB.s_inode_start + (NextInodo * sizeof(TablaInodo));
+                }
+                else
+                {
+                    cout << "Error, no existe la carpeta \"" << SubPath << Name << "\"" << endl;
+                    Error = true;
+                    break;
+                }
+                SubPath += Name + "/";
+            }
+            SubPath += Path;
+            InodoActual = SB.s_inode_start + (BuscarCarpeta(InodoActual, Path) * sizeof(TablaInodo));
+            if (!Error)
+            {
+                fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                TablaInodo InodoArchivo;
+                file.seekg(InodoActual);
+                file.read(reinterpret_cast<char *>(&InodoArchivo), sizeof(InodoArchivo));
+                file.close();
+                if (InodoArchivo.i_type == 1)
+                {
+                    string Content = LeerArchivo(InodoActual);
+                    Content = Content.substr(0, Content.length() - 1);
+                    CrearPath(Ruta);
+                    fstream Archivo(Ruta, ios::out | ios::trunc);
+                    if (Archivo.is_open())
+                    {
+                        Archivo.seekg(0);
+                        Archivo.write(Content.c_str(), Content.length());
+                        Archivo.close();
+                        cout << "Reporte Creado con Exito" << endl;
+                    }
+                    else
+                    {
+                        cout << "Error, no se pudo abrir el archivo" << endl;
+                    }
+                }
+                else
+                {
+                    cout << "Error, se intento leer una carpeta" << endl;
+                }
             }
         }
         else
@@ -2651,7 +4069,7 @@ string LeerArchivo(int InodoInit)
                 else
                 {
                     file.close();
-                    Contenido += LeerPorApuntadores(SB.s_inode_start, Aux.i_block[i], (12 - i));
+                    Contenido += LeerPorApuntadores(SB.s_block_start, Aux.i_block[i], (i - 12));
                     fstream file(Activa.Path, ios::binary | ios::in | ios::out);
                 }
             }
@@ -2690,7 +4108,7 @@ string LeerPorApuntadores(int blocke_start, int Blocke, int Nivel)
                 else
                 {
                     file.close();
-                    Contenido += LeerPorApuntadores(blocke_start, Aux.b_pointers[i], (Nivel - i));
+                    Contenido += LeerPorApuntadores(blocke_start, Aux.b_pointers[i], (Nivel - 1));
                     fstream file(Activa.Path, ios::binary | ios::in | ios::out);
                 }
             }
@@ -2791,7 +4209,7 @@ void ModificarArchivo(int InodoInit, string Texto)
                     BloqueApuntadores NuevoBloque;
                     for (int j = 0; j < 16; j++)
                     {
-                        NuevoBloque.b_pointers[i] = -1;
+                        NuevoBloque.b_pointers[j] = -1;
                     }
                     file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueApuntadores)));
                     file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
@@ -2892,12 +4310,12 @@ string ModificacionBloqueArchivo(int NumBloque, string Texto, int Nivel)
                     else
                     {
                         BloqueApuntadores NuevoBloque;
-                        file.seekg(SB.s_block_start + (Nuevo * sizeof(BloqueApuntadores)));
-                        file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
                         for (int j = 0; j < 16; j++)
                         {
-                            NuevoBloque.b_pointers[i] = -1;
+                            NuevoBloque.b_pointers[j] = -1;
                         }
+                        file.seekg(SB.s_block_start + (Nuevo * sizeof(NuevoBloque)));
+                        file.write(reinterpret_cast<char *>(&NuevoBloque), sizeof(NuevoBloque));
                     }
                     Archivo.b_pointers[i] = Nuevo + 1;
                     file.seekg(SB.s_block_start + ((NumBloque - 1) * sizeof(BloqueArchivos)));
@@ -2906,7 +4324,7 @@ string ModificacionBloqueArchivo(int NumBloque, string Texto, int Nivel)
                     file.seekg(Sesion.Active.part_start);
                     file.write(reinterpret_cast<char *>(&SB), sizeof(SB));
                     file.close();
-                    Texto = ModificacionBloqueArchivo(Archivo.b_pointers[i], Texto, i - 11);
+                    Texto = ModificacionBloqueArchivo(Archivo.b_pointers[i], Texto, Nivel - 1);
                 }
             }
         }
@@ -3385,16 +4803,19 @@ bool CrearArchivoEnBloque(int Bloque, string Nombre, int Nivel, int Anterior, in
                     else if (Cont != "")
                     {
                         ifstream Archivo(Cont.c_str());
-                        if(Archivo.is_open()){
+                        if (Archivo.is_open())
+                        {
                             string ContText = "";
-                            while(!Archivo.eof()){
+                            while (!Archivo.eof())
+                            {
                                 ContText += Archivo.get();
                             }
-                            ModificarArchivo((SB.s_inode_start + (Nuevo * sizeof(TablaInodo))), ContText.substr(0,ContText.length()-1));
-                        }else{
+                            ModificarArchivo((SB.s_inode_start + (Nuevo * sizeof(TablaInodo))), ContText.substr(0, ContText.length()));
+                        }
+                        else
+                        {
                             cout << "Error, No se pudo abrir el archivo fuente, archivo creado sin información" << endl;
                         }
-
                     }
                     return true;
                 }
@@ -3473,6 +4894,22 @@ bool CrearArchivoEnBloque(int Bloque, string Nombre, int Nivel, int Anterior, in
         cout << "Error, no se pudo abrir el archivo" << endl;
     }
     return false;
+}
+
+void EliminarInodo(int InodoPadre, string Nombre)
+{
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
 }
 
 bool ComprobarPermiso(int Inodo, bool Lectura, bool Escritura, bool Ejecucion)
