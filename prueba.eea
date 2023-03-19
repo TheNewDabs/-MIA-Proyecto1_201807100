@@ -34,9 +34,45 @@ mkusr >user=userRoot >pass=tyui >grp=root2
 mkusr >user=user2 >pass=zxcv >grp=Usuarios
 rmusr >user=userRoot
 mkfile >path="/home/dabs/pruebas/hola.txt" >r >cont="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/archivo1.txt"
-cat >File1="/home/dabs/pruebas/hola.txt"
-#seeinfo >id=001Disco1
-pause
+#mkfile >path="/home/dabs/pruebas/hola.txt" >r >cont="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/archivo2.txt"
+mkfile >path="/home/dabs/pruebas/hola.txt" >r >cont="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/archivo1.txt"
+mkfile >path="/home/dabs/pruebas/hola2.txt" >r >cont="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/archivo1.txt"
+mkfile >path="/home/dabs/pruebas/hola3.txt" >r >cont="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/archivo2.txt"
+edit >path="/home/dabs/pruebas/hola2.txt" >cont="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/archivo2.txt"
+rename >path="/home/dabs/pruebas/hola2.txt" >name=hola0.txt
+mkdir >path="/home/carpeta1/prueba" >r
+mkdir >path="/home/carpeta1/prueba2"
+mkdir >path="/home/carpeta1/prueba3"
+mkdir >path="/home/carpeta1/prueba4"
+mkdir >path="/home/carpeta1/prueba5"
+mkdir >path="/home/carpeta1/prueba6"
+mkdir >path="/home/carpeta1/prueba7"
+mkdir >path="/home/carpeta1/prueba8"
+mkdir >path="/home/carpeta1/prueba9"
+mkdir >path="/home/carpeta1/prueba10"
+mkdir >path="/home/carpeta1/prueba11"
+mkdir >path="/home/carpeta1/prueba12"
+mkdir >path="/home/carpeta1/prueba13"
+mkdir >path="/home/carpeta1/prueba14"
+mkdir >path="/home/carpeta1/prueba15"
+mkdir >path="/home/carpeta1/prueba16"
+mkdir >path="/home/carpeta1/prueba17"
+mkdir >path="/home/carpeta1/prueba18"
+mkdir >path="/home/carpeta1/prueba19"
+mkdir >path="/home/carpeta1/prueba20"
+mkdir >path="/home/carpeta1/prueba21"
+mkdir >path="/home/carpeta1/prueba22"
+mkdir >path="/home/carpeta1/prueba23"
+mkdir >path="/home/carpeta1/prueba24"
+mkdir >path="/home/carpeta1/prueba25"
+mkdir >path="/home/carpeta1/prueba26"
+mkdir >path="/home/carpeta1/prueba27"
+mkdir >path="/home/carpeta1/prueba28"
+mkdir >path="/home/carpeta1/prueba29"
+mkdir >path="/home/carpeta1/prueba30"
+cat >File1="/home/dabs/pruebas/hola0.txt" >File2="/home/dabs/pruebas/hola3.txt"
+remove >path="/home/dabs/pruebas/hola3.txt"
+remove >path="/home/carpeta1"
 rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteMBR.png" >name=mbr
 rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteDSK.png" >name=disk
 rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteInode.png" >name=inode
@@ -46,4 +82,8 @@ rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/R
 rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteTree.png" >name=tree
 rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteSB.png" >name=sb
 rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteFile.txt" >name=file >ruta="/home/dabs/pruebas/hola.txt" 
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteFile2.txt" >name=file >ruta="/home/dabs/pruebas/hola0.txt" 
+remove >path="/home/dabs/pruebas/hola.txt"
+rename >path="/home/dabs" >name=Daniel
+rep >id=001Disco1 >path="/home/dabs/Documentos/GitHub/-MIA-Proyecto1_201807100/Reportes/ReporteTree2.png" >name=tree
 logout
