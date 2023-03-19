@@ -1,3 +1,5 @@
+// CREADO POR: DABS
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -150,6 +152,7 @@ void AgregarGrupo(string);
 void EliminarGrupo(string);
 void AgregarUsuario(string, string, string);
 void EliminarUsuario(string);
+void CambiarGrupo(string, string);
 void MKFILE(string, bool, int, string);
 void CAT(string);
 void REMOVE(string);
@@ -166,7 +169,6 @@ void REP(string, string, string, string);
 void REPMBR(string, MountPart);
 void REPDISK(string, MountPart);
 void REPInode(string, MountPart);
-
 void REPBlock(string, MountPart);
 string REPBlockInode(MountPart, int);
 string REPBlockBlock(MountPart, int, int, int);
@@ -177,7 +179,7 @@ string REPTreeInode(MountPart, int);
 string REPTreeBlock(MountPart, int, int, int);
 void REPSB(string, MountPart);
 void REPFile(string, MountPart, string);
-
+void REPLs(string, MountPart, string);
 string LeerArchivo(int);
 string LeerPorApuntadores(int, int, int);
 void ModificarArchivo(int, string);
@@ -200,6 +202,9 @@ string getName(string);
 void VerDisco(string);
 void VerMounts();
 void VerInfo(string);
+string AnalizarCarpeta(int);
+string AnalizarCarpetaEnBloque(int, int);
+string BuscarUsuarioID(int, bool);
 
 MountPart ActivePart[10];
 Session Sesion;
@@ -538,7 +543,7 @@ bool LeerComando(string Linea)
                     ID = Valor(Linea);
                     BID = true;
                 }
-                else if (strLower(Aux) == ">name")
+                else if (strLower(Aux) == ">type")
                 {
                     Type = Valor(Linea);
                     if (strLower(Type) != "full")
@@ -864,7 +869,7 @@ bool LeerComando(string Linea)
                     else if (strLower(Aux) == ">size")
                     {
                         Size = stoi(Valor(Linea));
-                        if (Size <= 0)
+                        if (Size < 0)
                         {
                             Error = true;
                             cout << "Error, El tamaño del disco debe ser mayor a 0" << endl;
@@ -1080,6 +1085,66 @@ bool LeerComando(string Linea)
         }
         else if (strLower(Aux) == "chgrp")
         {
+            if (Sesion.User == "root      ")
+            {
+                string Name, GRP;
+                bool BName = false, BGRP = false;
+                while (Linea != "" && !Error)
+                {
+                    Aux = Valor(Linea);
+                    if (strLower(Aux) == ">user")
+                    {
+                        Name = Valor(Linea);
+                        if (Name.length() < 1)
+                        {
+                            cout << "Error, no puede ingresar un nombre vacio" << endl;
+                            Error = true;
+                        }
+                        else if (Name.length() > 10)
+                        {
+                            cout << "Error, el nombre es demaciado largo" << endl;
+                            Error = true;
+                        }
+                        BName = true;
+                    }
+                    else if (strLower(Aux) == ">grp")
+                    {
+                        GRP = Valor(Linea);
+                        if (GRP.length() < 1)
+                        {
+                            cout << "Error, no puede ingresar un nombre vacio" << endl;
+                            Error = true;
+                        }
+                        else if (GRP.length() > 10)
+                        {
+                            cout << "Error, el nombre es demaciado largo" << endl;
+                            Error = true;
+                        }
+                        BGRP = true;
+                    }
+                    else
+                    {
+                        Error = true;
+                        cout << "Error, Parametro desconocido" << endl;
+                    }
+                }
+                if (BName && BGRP && !Error)
+                {
+                    CambiarGrupo(Name, GRP);
+                }
+                else if (!Error)
+                {
+                    cout << "Error, Faltan parametros" << endl;
+                }
+            }
+            else if (Sesion.User == "")
+            {
+                cout << "Error, No tiene sesion activa" << endl;
+            }
+            else
+            {
+                cout << "Error, Solo el usuario root puede eliminar grupos" << endl;
+            }
         }
         else if (strLower(Aux) == "chmod")
         {
@@ -2829,7 +2894,7 @@ void EliminarUsuario(string Name)
                     Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
                     if (User == Name)
                     {
-                        Aux += "0, G, " + Name + ", " + Linea + "\n";
+                        Aux += "0, U, " + Name + ", " + Linea + "\n";
                     }
                     else
                     {
@@ -2849,6 +2914,84 @@ void EliminarUsuario(string Name)
         Usuarios_txt = Aux;
         ModificarArchivo((SB.s_inode_start + sizeof(TablaInodo)), Usuarios_txt);
         cout << "Usuario eleminado con exito" << endl;
+        file.close();
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+        file.close();
+    }
+}
+
+void CambiarGrupo(string Name, string GRP)
+{
+    while (Name.length() < 10)
+    {
+        Name += " ";
+    }
+    while (GRP.length() < 10)
+    {
+        GRP += " ";
+    }
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        string Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+        string Aux = "";
+        int IDMayor = 0;
+        bool GrupoEncontrado = false;
+        while (Usuarios_txt.find("\n") != string::npos)
+        {
+            string Linea = Usuarios_txt.substr(0, Usuarios_txt.find("\n"));
+            string Temp = Linea;
+            Usuarios_txt = Usuarios_txt.substr(Usuarios_txt.find("\n") + 1, Usuarios_txt.length());
+            int IDTemp = stoi(Linea.substr(0, Linea.find(",")));
+            if (IDTemp != 0)
+            {
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                string Type = Linea.substr(0, Linea.find(","));
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                if (Type == "U")
+                {
+                    string User = Linea.substr(0, Linea.find(","));
+                    Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                    if (User == Name)
+                    {
+                        Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                        Aux += to_string(IDTemp) + ", U, " + Name + ", " + GRP + ", " + Linea + "\n";
+                    }
+                    else
+                    {
+                        Aux += Temp + "\n";
+                    }
+                }
+                else
+                {
+                    Aux += Temp + "\n";
+                    if (Linea == GRP && IDTemp != 0)
+                    {
+                        GrupoEncontrado = true;
+                    }
+                }
+            }
+            else
+            {
+                Aux += Temp + "\n";
+            }
+        }
+        if (GrupoEncontrado)
+        {
+            Usuarios_txt = Aux;
+            ModificarArchivo((SB.s_inode_start + sizeof(TablaInodo)), Usuarios_txt);
+            cout << "Grupo cambiado con exito" << endl;
+        }
+        else
+        {
+            cout << "Grupo no encontrado" << endl;
+        }
         file.close();
     }
     else
@@ -3074,8 +3217,6 @@ void EDIT(string Path, string Cont)
                                 }
                                 ModificarArchivo(InodoActual, ContText.substr(0, ContText.length() - 1));
                                 cout << "Archivo modificado exitosamente" << endl;
-                                cout << InodoActual << endl;
-                                cout << ContText << endl;
                             }
                             else
                             {
@@ -3688,6 +3829,8 @@ void REP(string Name, string Path, string ID, string Ruta)
             break;
         }
     }
+    Session Temp = Sesion;
+    Sesion.Active = ActivePart[ActiveParticion];
     if (ActiveParticion != -1)
     {
         if (strLower(Name) == "mbr")
@@ -3729,8 +3872,9 @@ void REP(string Name, string Path, string ID, string Ruta)
         {
             REPFile(Ruta, ActivePart[ActiveParticion], Path);
         }
-        else if (strLower(Name) == "is")
+        else if (strLower(Name) == "ls")
         {
+            REPLs(Ruta, ActivePart[ActiveParticion], Path);
         }
         else
         {
@@ -3741,6 +3885,7 @@ void REP(string Name, string Path, string ID, string Ruta)
     {
         cout << "Error, ID no encontrada" << endl;
     }
+    Sesion = Temp;
 }
 
 void REPMBR(string Path, MountPart Activa)
@@ -4819,6 +4964,86 @@ void REPFile(string Path, MountPart Activa, string Ruta)
     file.close();
 }
 
+void REPLs(string Path, MountPart Activa, string Ruta)
+{
+    fstream file(Activa.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Path[0] == '/')
+        {
+            file.close();
+            int InodoActual = SB.s_inode_start;
+            Path = Path.substr(1, Path.length());
+            string SubPath = "/";
+            bool Error = false;
+            while (Path.find("/") != string::npos)
+            {
+                string Name = Path.substr(0, Path.find("/"));
+                Path = Path.substr(Path.find("/") + 1, Path.length());
+                int NextInodo = BuscarCarpeta(InodoActual, Name);
+                if (NextInodo != -1)
+                {
+                    InodoActual = SB.s_inode_start + (NextInodo * sizeof(TablaInodo));
+                }
+                else
+                {
+                    cout << "Error, no existe la carpeta \"" << SubPath << Name << "\"" << endl;
+                    Error = true;
+                    break;
+                }
+                SubPath += Name + "/";
+            }
+            SubPath += Path;
+            InodoActual = SB.s_inode_start + (BuscarCarpeta(InodoActual, Path) * sizeof(TablaInodo));
+            if (!Error)
+            {
+                fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                TablaInodo InodoArchivo;
+                file.seekg(InodoActual);
+                file.read(reinterpret_cast<char *>(&InodoArchivo), sizeof(InodoArchivo));
+                file.close();
+                if (InodoArchivo.i_type == 0)
+                {
+                    string Content = AnalizarCarpeta(InodoActual);
+                    CrearPath(Ruta);
+                    CrearPath("Reportes_gen/ls.dot");
+                    fstream Archivo("Reportes_gen/ls.dot", ios::out | ios::trunc);
+                    if (Archivo.is_open())
+                    {
+                        Archivo.seekg(0);
+                        Archivo.write(Content.c_str(), Content.length());
+                        Archivo.close();
+                        CrearPath(Ruta);
+                        string Comando = "dot -Tpng Reportes_gen/ls.dot -o " + Ruta;
+                        system(Comando.c_str());
+                        cout << "Reporte Creado con Exito" << endl;
+                    }
+                    else
+                    {
+                        cout << "Error, no se pudo abrir el archivo" << endl;
+                    }
+                }
+                else
+                {
+                    cout << "Error, se intento leer una carpeta" << endl;
+                }
+            }
+        }
+        else
+        {
+            cout << "Error, el path debe iniciar en la carpeta raiz" << endl;
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+}
+
 string LeerArchivo(int InodoInit)
 {
     MountPart Activa = Sesion.Active;
@@ -5291,7 +5516,10 @@ int RenameCarpetaEnBloque(int Block, string Name, int Nivel, string NewName)
                     {
                         fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
                         file.seekg(Block);
-                        cout << NewName.length() << "<------" << endl;
+                        if (NewName.length() > 11)
+                        {
+                            NewName = NewName.substr(0, 11);
+                        }
                         strcpy(Actual.b_content[i].b_name, NewName.c_str());
                         file.write(reinterpret_cast<char *>(&Actual), sizeof(Actual));
                         file.close();
@@ -6319,4 +6547,209 @@ void VerInfo(string ID)
     {
         cout << "Error, ID no encontrada" << endl;
     }
+}
+
+string AnalizarCarpeta(int Inodo)
+{
+    string Respuesta = "digraph G {\n";
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        TablaInodo Actual;
+        file.seekg(Inodo);
+        file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+        file.close();
+        Respuesta += "\tls [\n\tshape=plaintext\n\tlabel=<\n\t\t<table border='0' cellborder='1' cellspacing='0'>\n\t\t\t<tr><td COLSPAN=\"7\" bgcolor=\"#009EA9\">LS</td></tr>\n\t\t\t<tr>\n\t\t\t\t<td bgcolor=\"#009EA9\">Permisos</td>\n\t\t\t\t<td bgcolor=\"#009EA9\">Dueño</td>\n\t\t\t\t<td bgcolor=\"#009EA9\">Grupo</td>\n\t\t\t\t<td bgcolor=\"#009EA9\">Size</td>\n\t\t\t\t<td bgcolor=\"#009EA9\">Fecha y Hora</td>\n\t\t\t\t<td bgcolor=\"#009EA9\">Tipo</td>\n\t\t\t\t<td bgcolor=\"#009EA9\">Nombre</td>\n\t\t\t</tr>\n";
+        for (int i = 0; i < 15; i++)
+        {
+            if (Actual.i_block[i] != -1)
+            {
+                if (i < 12)
+                {
+                    Respuesta += AnalizarCarpetaEnBloque((SB.s_block_start + ((Actual.i_block[i] - 1) * sizeof(BloqueCarpeta))), 0);
+                }
+                else
+                {
+                    Respuesta += AnalizarCarpetaEnBloque((SB.s_block_start + ((Actual.i_block[i] - 1) * sizeof(BloqueCarpeta))), i - 11);
+                }
+            }
+        }
+        Respuesta += "\t\t</table>\n\t>];\n";
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+        file.close();
+    }
+    Respuesta += "}";
+    return Respuesta;
+}
+
+string AnalizarCarpetaEnBloque(int Block, int Nivel)
+{
+    string Respuesta = "";
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        if (Nivel == 0)
+        {
+            BloqueCarpeta Actual;
+            file.seekg(Block);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+            file.close();
+            for (int i = 0; i < 4; i++)
+            {
+                if (Actual.b_content[i].b_inodo != -1)
+                {
+                    string NameInode = Actual.b_content[i].b_name;
+                    if (NameInode != ".." && NameInode != ".")
+                    {
+                        TablaInodo InodoA;
+                        fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+                        file.seekg(SB.s_inode_start + (Actual.b_content[i].b_inodo * sizeof(TablaInodo)));
+                        file.read(reinterpret_cast<char *>(&InodoA), sizeof(TablaInodo));
+                        int Perm[3];
+                        Perm[0] = InodoA.i_perm;
+                        Perm[2] = Perm[0] % 10;
+                        Perm[0] = (Perm[0] - Perm[2]) / 10;
+                        Perm[1] = Perm[0] % 10;
+                        Perm[0] = (Perm[0] - Perm[1]) / 10;
+                        Respuesta += "\t\t\t<tr>\n";
+                        Respuesta += "\t\t\t\t<td>";
+                        for (int i = 0; i < 3; i++)
+                        {
+                            switch (Perm[i])
+                            {
+                            case 1:
+                                Respuesta += "--x";
+                                break;
+                            case 2:
+                                Respuesta += "-w-";
+                                break;
+                            case 3:
+                                Respuesta += "-wx";
+                                break;
+                            case 4:
+                                Respuesta += "r--";
+                                break;
+                            case 5:
+                                Respuesta += "r-x";
+                                break;
+                            case 6:
+                                Respuesta += "rw-";
+                                break;
+                            case 7:
+                                Respuesta += "rwx";
+                                break;
+                            default:
+                                Respuesta += "---";
+                            }
+                        }
+                        Respuesta += "</td>\n";
+                        Respuesta += "\t\t\t\t<td>";
+                        Respuesta += BuscarUsuarioID(InodoA.i_uid, true);
+                        Respuesta += "</td>\n";
+                        Respuesta += "\t\t\t\t<td>";
+                        Respuesta += BuscarUsuarioID(InodoA.i_gid, false);
+                        Respuesta += "</td>\n";
+                        Respuesta += "\t\t\t\t<td>";
+                        Respuesta += to_string(InodoA.i_size);
+                        Respuesta += "</td>\n";
+                        Respuesta += "\t\t\t\t<td>";
+                        Respuesta += ctime(&InodoA.i_ctime);
+                        Respuesta = Respuesta.substr(0, Respuesta.length() - 1);
+                        Respuesta += "</td>\n";
+                        Respuesta += "\t\t\t\t<td>";
+                        if (InodoA.i_type == 0)
+                        {
+                            Respuesta += "Carpeta";
+                        }
+                        else
+                        {
+                            Respuesta += "Archivo";
+                        }
+                        Respuesta += "</td>\n";
+                        Respuesta += "\t\t\t\t<td>";
+                        Respuesta += NameInode;
+                        Respuesta += "</td>\n";
+                        Respuesta += "\t\t\t</tr>\n";
+                    }
+                }
+            }
+        }
+        else
+        {
+            BloqueApuntadores Actual;
+            file.seekg(Block);
+            file.read(reinterpret_cast<char *>(&Actual), sizeof(Actual));
+            file.close();
+            for (int i = 0; i < 16; i++)
+            {
+                if (Actual.b_pointers[i] != -1)
+                {
+                    Respuesta += AnalizarCarpetaEnBloque((SB.s_block_start + ((Actual.b_pointers[i] - 1) * sizeof(BloqueCarpeta))), (Nivel - 1));
+                }
+            }
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+        file.close();
+    }
+    return Respuesta;
+}
+
+string BuscarUsuarioID(int ID, bool TypeB)
+{
+    // True UID, False GID
+    fstream file(Sesion.Active.Path, ios::binary | ios::in | ios::out);
+    if (file.is_open())
+    {
+        SuperBloque SB;
+        file.seekg(Sesion.Active.part_start);
+        file.read(reinterpret_cast<char *>(&SB), sizeof(SB));
+        MountPart Temp = Sesion.Active;
+        string Usuarios_txt = LeerArchivo(SB.s_inode_start + sizeof(TablaInodo));
+        Sesion.IDU = -1;
+        bool Contra = false;
+        while (Usuarios_txt.find("\n") != string::npos)
+        {
+            string Linea = Usuarios_txt.substr(0, Usuarios_txt.find("\n"));
+            Usuarios_txt = Usuarios_txt.substr(Usuarios_txt.find("\n") + 1, Usuarios_txt.length());
+            int IDTemp = stoi(Linea.substr(0, Linea.find(",")));
+            if (IDTemp != 0)
+            {
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                string Type = Linea.substr(0, Linea.find(","));
+                Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                if (Type == "U" && TypeB)
+                {
+                    string Grupo = Linea.substr(0, Linea.find(","));
+                    Linea = Linea.substr(Linea.find(",") + 2, Linea.length());
+                    string User = Linea.substr(0, Linea.find(","));
+                    if (ID == IDTemp)
+                    {
+                        return User;
+                    }
+                }
+                else if (!TypeB)
+                {
+                    return Linea;
+                }
+            }
+        }
+    }
+    else
+    {
+        cout << "Error, no se pudo abrir el archivo" << endl;
+    }
+    file.close();
+    return "";
 }
